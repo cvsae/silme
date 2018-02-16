@@ -41,3 +41,7 @@ def GetNewAddress():
     key = GenerateNewKey()
     return CKey().GetAddress(key)
 
+
+def GetBalance():
+    return CWalletDB().GetBalance()
+

@@ -104,6 +104,7 @@ if __name__ == '__main__':
     #wallet
     server.register_function(GetMyAddresses, 'getmyaddresses')
     server.register_function(GetNewAddress, 'getnewaddress')
+    server.register_function(GetBalance, 'getbalance')
 
 
     # signals

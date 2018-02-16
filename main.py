@@ -137,6 +137,31 @@ class CWalletDB(object):
         return addresses
 
 
+    def GetBalance(self):
+
+        balance = 0 
+        # get all blockchain transactions
+        conn = sqlite3.connect(GetAppDir() +  "/blockchain.db")
+        conn.text_factory = str
+        cur = conn.cursor() 
+        cur.execute("SELECT * FROM transactions")
+        txs = cur.fetchall()
+
+
+        # calculate balance  
+
+        for transaction in txs:
+            pubkey = transaction[7].encode("hex_codec")[2:132]
+            if self.IsMineKey(pubkey):
+                balance += transaction[4]
+                thisHash = transaction[5]
+                # check if the hash have spend inputs 
+                for ttx in txs:
+                    if ttx[2] == thisHash:
+                        # has spend coins
+                        balance -= ttx[4]
+
+        return balance / 100000000
 
 
 
