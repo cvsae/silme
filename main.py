@@ -111,6 +111,8 @@ class CBlockchain(object):
         # remove signature from tx 
         del tx['signature']
 
+
+
         conn = sqlite3.connect(GetAppDir() +  "/blockchain.db")
         conn.text_factory = str
         cur = conn.cursor() 
@@ -249,7 +251,7 @@ class CWalletDB(object):
         txNew.add("prev_out", thisHash)
         txNew.add("time", int(time.time()))
         txNew.add("value", amount)
-        txNew.input_script("")
+        txNew.input_script("hellolllllllhellolllllll")
         txNew.output_script(recipten)
         txNew.add("signature", Sig().SSign(str(txNew), privv))
 
@@ -650,7 +652,7 @@ class Proccess(object):
 
         # verify input sig
         for x in xrange(1,len(pblock.vtx)):
-            if not self.ValidateInput(pblock.vtx[x]):
+            if not CBlockchain().isVaildTx(pblock.vtx[x]):
                 logg("CheckBlock() : Failed to verify input sig")
                 return False
 
@@ -679,6 +681,7 @@ class Proccess(object):
         # do verify 
         try:
             Sig().VVerify(tx,signature)
+            tx['signature'] = signature
         except Exception, e:
             tx['signature'] = signature
             logg("Transaction %s verification error" %hashlib.sha256(hashlib.sha256(str(tx)).digest()).digest().encode("hex_codec"))

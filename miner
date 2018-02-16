@@ -52,7 +52,6 @@ def Miner(debug, blocks):
         pblock = CBlock()
         pblock.Nullvtx()
         pblock.vtx.append(txNew)
-        #pblock.vtx.append(txdef)
 
         #Collect the latest transactions into the block
 
