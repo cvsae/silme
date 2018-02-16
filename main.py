@@ -98,6 +98,38 @@ class Sig(object):
 
 
 
+class CBlockchain(object):
+
+
+    def isVaildTx(self, tx):
+        
+        amount = tx["value"]
+        inHash = tx["prev_out"]
+        itime = tx["time"]
+        # store signature in memory
+        signature = tx["signature"]
+        # remove signature from tx 
+        del tx['signature']
+
+        conn = sqlite3.connect(GetAppDir() +  "/blockchain.db")
+        conn.text_factory = str
+        cur = conn.cursor() 
+        res = cur.execute("SELECT value FROM transactions where hash = ?", (inHash,)).fetchone()[0]
+        ous = cur.execute("SELECT output_script FROM transactions where hash = ?", (inHash,)).fetchone()[0].encode("hex_codec")[2:132]
+
+
+        if not res:
+            return False
+
+        if res < amount:
+            return False
+
+        if itime > int(time.time()):
+            return False
+
+        return ecdsa_verify(str(tx),signature,ous)
+
+
 
 class CWalletDB(object):
 
@@ -140,6 +172,7 @@ class CWalletDB(object):
     def GetBalance(self):
 
         balance = 0 
+
         # get all blockchain transactions
         conn = sqlite3.connect(GetAppDir() +  "/blockchain.db")
         conn.text_factory = str
@@ -161,7 +194,68 @@ class CWalletDB(object):
                         # has spend coins
                         balance -= ttx[4]
 
+
+
         return balance / 100000000
+
+
+    def FindHash(self, amount):
+        # get all blockchain transactions
+        conn = sqlite3.connect(GetAppDir() +  "/blockchain.db")
+        conn.text_factory = str
+        cur = conn.cursor() 
+        cur.execute("SELECT * FROM transactions")
+        txs = cur.fetchall()
+
+
+        ntxs = []
+
+        for transaction in txs:
+            pubkey = transaction[7].encode("hex_codec")[2:132]
+            if self.IsMineKey(pubkey):
+                thisHash = transaction[5]
+                if transaction[4] >= amount:
+                    for ttx in txs:
+                        if type(ttx[2] == int):
+                            return thisHash
+
+
+    def FindAddrFromHash(self, txhash):
+        # get all blockchain transactions
+        conn = sqlite3.connect(GetAppDir() +  "/blockchain.db")
+        conn.text_factory = str
+        cur = conn.cursor() 
+        res = cur.execute("SELECT output_script FROM transactions where hash = ?", (txhash,)).fetchone()[0]
+        pubkey = res.encode("hex_codec")[2:132]
+        thisPriv = self.cur.execute("SELECT private FROM keys where pubkey = ?", (pubkey,)).fetchone()[0]
+        return thisPriv
+
+
+
+
+    def GenerateTransaction(self, amount, recipten):
+        mybalance = self.GetBalance()
+        if mybalance < amount:
+            return "Not available balance to create this transaction"
+
+        # collect hash
+        thisHash = self.FindHash(amount)
+        # privkey of the input hash 
+        privv = self.FindAddrFromHash(thisHash)
+        
+
+        txNew = CTransaction()
+        txNew.add("version", 1)
+        txNew.add("prev_out", thisHash)
+        txNew.add("time", int(time.time()))
+        txNew.add("value", amount)
+        txNew.input_script("")
+        txNew.output_script(recipten)
+        txNew.add("signature", Sig().SSign(str(txNew), privv))
+
+        return txNew
+
+
 
 
 
