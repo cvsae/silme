@@ -1,0 +1,3 @@
+pybitcointools 
+bitcoin
+termcolor
