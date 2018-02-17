@@ -10,6 +10,8 @@ import tkMessageBox
 from main import *
 from subprocess import check_output
 
+
+
 class silme:
 
     def __init__(self, root):
@@ -22,6 +24,7 @@ class silme:
         self.balance_ = StringVar()
         self.connection_ = StringVar()
         self.startorstopmining_ = StringVar()
+        self.mempool_ = StringVar()
 
 
         thread.start_new_thread(self._update, ())
@@ -32,36 +35,30 @@ class silme:
         self.balance()
         self.send()
         self.connection()
+        self.mempool()
         
 
     def _update(self):
 
         addr = GenerateNewKey()
         while True:
-
-
             self.startorstopmining_.set(self.sosm())
-            
-            
             self.addr_.set(addr)
             self.balance_.set(CWalletDB().GetBalance())
             self.connection_.set(internetConnection())
+            self.mempool_.set(Mempool().counttxs())
             time.sleep(5)
 
 
     def sosm(self):
         out = check_output("ps aux |grep python", shell=True)
-
         if "./miner" in out:
             return "Stop"
         else:
             return "Start"
 
-
-
     
     def addr(self):
-
         addr_f = LabelFrame(self.frame, text="Address", padx=5, pady=5)
         addr_f.grid(sticky=E+W)
         Entry(self.frame, state="readonly", textvariable=self.addr_, width=50).grid(in_=addr_f)
@@ -69,10 +66,15 @@ class silme:
 
 
     def balance(self):
-
         addr_balance = LabelFrame(self.frame, text="balance", padx=5, pady=5)
         addr_balance.grid(sticky=E+W)
         Entry(self.frame, state="readonly", textvariable=self.balance_, width=50).grid(in_=addr_balance)
+
+
+    def mempool(self):
+        mmm = LabelFrame(self.frame, text="mempool txs", padx=5, pady=5)
+        mmm.grid(sticky=E+W)
+        Entry(self.frame, state="readonly", textvariable=self.mempool_, width=50).grid(in_=mmm)
 
 
     def mining(self):
@@ -107,6 +109,7 @@ class silme:
         else:
             tkMessageBox.showinfo("Sending...", "Your coins are being sent, this could take a while.")
 
+
     def __mining(self):
         if self.startorstopmining_.get() == "Stop":
             out = check_output("ps aux |grep python |grep miner |awk '{print $2}'", shell=True)
@@ -119,11 +122,14 @@ class silme:
 
 
     def connection(self):
-
         connection_s = LabelFrame(self.frame, text="connection", padx=5, pady=5)
         connection_s.grid(sticky=E+W)
         Entry(self.frame, state="readonly", textvariable=self.connection_, width=50).grid(in_=connection_s)
 
+
+
+
+    
 
 
 

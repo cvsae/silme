@@ -265,12 +265,43 @@ class CWalletDB(object):
             txNew.input_script("SilmeTransaction")
             txNew.output_script(recipten)
             txNew.add("signature", Sig().SSign(str(txNew), privv))
-
+            Mempool().addtx(txNew)
             return True
         else:
             return False
 
 
+
+
+class Mempool(object):
+    
+    # initilize empty mempool
+    mempool = []
+
+
+    def addtx(self, tx):
+        if CBlockchain().isVaildTx(tx):
+            if not self.haveTx(tx):
+                self.mempool.append(tx)
+                logg("Mempool() : Transaction %s added to mempool" %(hashlib.sha256(hashlib.sha256(str(tx)).hexdigest()).hexdigest(),))
+                return True
+            logg("Mempool() : Transaction %s already to mempool" %(hashlib.sha256(hashlib.sha256(str(tx)).hexdigest()).hexdigest(),))
+            return False, "Already have"
+        logg("Mempool() : Transaction %s is invailed" %(hashlib.sha256(hashlib.sha256(str(tx)).hexdigest()).hexdigest(),))
+        return False, "Invaild tx"
+
+
+
+    def haveTx(self, tx):
+        return tx in self.mempool
+
+
+    def counttxs(self):
+        return len(self.mempool)
+
+
+    def gettransactions(self):
+        return self.mempool
 
 
 
