@@ -8,6 +8,7 @@ import thread
 import time
 import tkMessageBox
 from main import *
+from subprocess import check_output
 
 class silme:
 
@@ -19,22 +20,45 @@ class silme:
         self.t = StringVar()
         self.addr_ = StringVar()
         self.balance_ = StringVar()
+        self.connection_ = StringVar()
+        self.startorstopmining_ = StringVar()
+
+
         thread.start_new_thread(self._update, ())
+
+
         self.addr()
         self.mining()
         self.balance()
         self.send()
+        self.connection()
         
 
     def _update(self):
 
         addr = GenerateNewKey()
         while True:
+
+
+            self.startorstopmining_.set(self.sosm())
             
             
             self.addr_.set(addr)
             self.balance_.set(CWalletDB().GetBalance())
-            time.sleep(10)
+            self.connection_.set(internetConnection())
+            time.sleep(5)
+
+
+    def sosm(self):
+        out = check_output("ps aux |grep python", shell=True)
+
+        if "./miner" in out:
+            return "Stop"
+        else:
+            return "Start"
+
+
+
     
     def addr(self):
 
@@ -54,7 +78,11 @@ class silme:
     def mining(self):
         mining_f = LabelFrame(self.frame, text="Mining", padx=3, pady=5)
         mining_f.grid(sticky=E+W)
-        send_b = Button(self.frame, command=self.__mining, text="Start").grid(in_=mining_f, row=0, column=4, sticky=W+E)
+        send_b = Button(self.frame, command=self.__mining, textvariable=self.startorstopmining_).grid(in_=mining_f, row=0, column=4, sticky=W+E)
+
+
+
+
 
     def send(self):
         send_f = LabelFrame(self.frame, text="Send Coin", padx=5, pady=15)
@@ -68,6 +96,8 @@ class silme:
         Label(self.frame, text="   ").grid(in_=send_f, row=0, column=5)
         Label(self.frame, text="   ").grid(in_=send_f, row=0, column=2)
         send_b = Button(self.frame, command=self._send, text="Send").grid(in_=send_f, row=0, column=8, sticky=W+E)
+
+
             
     def _send(self):
         amount = self.amount.get()
@@ -78,7 +108,21 @@ class silme:
             tkMessageBox.showinfo("Sending...", "Your coins are being sent, this could take a while.")
 
     def __mining(self):
-        os.system('./miner &')
+        if self.startorstopmining_.get() == "Stop":
+            out = check_output("ps aux |grep python |grep miner |awk '{print $2}'", shell=True)
+            os.system('kill ' + str(out))
+            tkMessageBox.showinfo("Mining...", "SilmeMiner Stoped.")
+        elif self.startorstopmining_.get() == "Start":
+            os.system('./miner &')
+            tkMessageBox.showinfo("Mining...", "SilmeMiner Started.")
+
+
+
+    def connection(self):
+
+        connection_s = LabelFrame(self.frame, text="connection", padx=5, pady=5)
+        connection_s.grid(sticky=E+W)
+        Entry(self.frame, state="readonly", textvariable=self.connection_, width=50).grid(in_=connection_s)
 
 
 
@@ -89,7 +133,7 @@ if __name__ == "__main__":
         os.system('python main.py')
     
     root = Tk()
-    root.geometry("450x250+350+100")
+    root.geometry("450x450+350+100")
     silme(root=root)
     root.title("Silme Client")
     root.mainloop()
