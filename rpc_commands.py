@@ -45,3 +45,7 @@ def GetNewAddress():
 def GetBalance():
     return CWalletDB().GetBalance()
 
+
+def MemCount():
+    return Mempool().counttxs()
+

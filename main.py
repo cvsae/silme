@@ -70,6 +70,8 @@ def internetConnection(host="8.8.8.8", port=53, timeout=3):
         return False
 
 
+
+
 class CKey(object):
 
     # CKey class use https://github.com/vbuterin/pybitcointools

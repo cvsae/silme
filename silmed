@@ -96,14 +96,20 @@ case "$1" in
     echo 
     echo "--------------  Wallet --------------"
     echo 
-    echo "getbalance - RAeturn wallet balance"
+    echo "getbalance - Return wallet balance"
     echo "getnewaddress - Reurn a new bitcoin address"
     echo "getmyaddresses - Return a list of addresses"
+    echo
+    echo "--------------  Mining --------------"
+    echo "mempoolcount - Return mempool transactions count"
+
+
+
 
 
 
 	;;
-    getbesthash|getbestheight|getdifficulty|getnewaddress|getmyaddresses|getbalance)
+    getbesthash|getbestheight|getdifficulty|getnewaddress|getmyaddresses|getbalance|mempoolcount)
 	if [ ! "$PID" ]; then
 	    echo "Server not running"
 	    exit
