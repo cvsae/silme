@@ -237,25 +237,29 @@ class CWalletDB(object):
 
     def GenerateTransaction(self, amount, recipten):
         mybalance = self.GetBalance()
+
+
         if mybalance < amount:
-            return "Not available balance to create this transaction"
+            return False
 
-        # collect hash
-        thisHash = self.FindHash(amount)
-        # privkey of the input hash 
-        privv = self.FindAddrFromHash(thisHash)
+        if len(recipten) == 130:
+            # collect hash
+            thisHash = self.FindHash(amount)
+            # privkey of the input hash 
+            privv = self.FindAddrFromHash(thisHash)
         
+            txNew = CTransaction()
+            txNew.add("version", 1)
+            txNew.add("prev_out", thisHash)
+            txNew.add("time", int(time.time()))
+            txNew.add("value", amount)
+            txNew.input_script("SilmeTransaction")
+            txNew.output_script(recipten)
+            txNew.add("signature", Sig().SSign(str(txNew), privv))
 
-        txNew = CTransaction()
-        txNew.add("version", 1)
-        txNew.add("prev_out", thisHash)
-        txNew.add("time", int(time.time()))
-        txNew.add("value", amount)
-        txNew.input_script("hellolllllllhellolllllll")
-        txNew.output_script(recipten)
-        txNew.add("signature", Sig().SSign(str(txNew), privv))
-
-        return txNew
+            return True
+        else:
+            return False
 
 
 
