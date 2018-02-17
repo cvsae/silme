@@ -53,6 +53,21 @@ if not os.path.exists(GetAppDir()):
         wallet_cursor.execute("CREATE TABLE transactions (tx_hash)")
         wallet_conn.commit()
 
+        logg("Initializing empty peers database at " + GetAppDir() + "/peers.db")
+        peers_conn = sqlite3.connect(GetAppDir() + "/peers.db")
+        peers_cursor = peers_conn.cursor()
+        peers_cursor.execute("CREATE TABLE nodes (ip, port, status)")
+        peers_conn.commit()
+
+
+        # hardcode nodes
+        peers_cursor.execute("INSERT INTO nodes VALUES (?,?,?)", ("127.0.0.1", 7777, "ok"))
+        peers_cursor.execute("INSERT INTO nodes VALUES (?,?,?)", ("127.0.0.2", 7777, "ok"))
+        peers_cursor.execute("INSERT INTO nodes VALUES (?,?,?)", ("127.0.0.3", 7777, "ok"))
+        peers_cursor.execute("INSERT INTO nodes VALUES (?,?,?)", ("127.0.0.4", 7777, "ok"))
+        peers_conn.commit()
+
+
 
 
         # add genesis to database 
@@ -68,6 +83,34 @@ def internetConnection(host="8.8.8.8", port=53, timeout=3):
         return True
     except Exception as ex:
         return False
+
+
+
+def haveReachableNode():
+
+    have = 0 
+    
+    peers_conn = sqlite3.connect(GetAppDir() + "/peers.db")
+    peers_cursor = peers_conn.cursor()
+    peers = peers_cursor.execute("SELECT * FROM nodes").fetchall()
+
+    for peer in peers:
+        peerip = peer[0]
+        peerport = peer[1]
+        peerstat = peer[2]
+
+        s = socket.socket()
+
+        try:
+            s.connect(peerip, port)
+        except:
+            s.close()
+        else:
+            have +=1
+    if have > 0:
+        return True
+    return False
+
 
 
 

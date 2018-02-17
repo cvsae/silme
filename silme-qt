@@ -23,6 +23,7 @@ class silme:
         self.addr_ = StringVar()
         self.balance_ = StringVar()
         self.connection_ = StringVar()
+        self.silme_connection_ = StringVar()
         self.startorstopmining_ = StringVar()
         self.mempool_ = StringVar()
 
@@ -36,6 +37,7 @@ class silme:
         self.send()
         self.connection()
         self.mempool()
+        self.silme_conn()
         
 
     def _update(self):
@@ -47,6 +49,7 @@ class silme:
             self.balance_.set(CWalletDB().GetBalance())
             self.connection_.set(internetConnection())
             self.mempool_.set(Mempool().counttxs())
+            self.silme_connection_.set(haveReachableNode())
             time.sleep(5)
 
 
@@ -104,13 +107,22 @@ class silme:
     def _send(self):
         amount = self.amount.get()
         recipt = self.to.get()
+        if self.silme_connection_.get() == str(0):
+            tkMessageBox.showinfo("Error", "Not available peers to connect")
+            return 0
         if not CWalletDB().GenerateTransaction(int(amount), str(recipt)):
             tkMessageBox.showinfo("Error", CWalletDB().GenerateTransaction(int(amount), str(recipt)))
+            return 0
         else:
             tkMessageBox.showinfo("Sending...", "Your coins are being sent, this could take a while.")
 
 
     def __mining(self):
+
+        if self.silme_connection_.get() == str(0):
+            tkMessageBox.showinfo("Error...", "Not available peers to connect")
+            return 0 
+
         if self.startorstopmining_.get() == "Stop":
             out = check_output("ps aux |grep python |grep miner |awk '{print $2}'", shell=True)
             os.system('kill ' + str(out))
@@ -122,9 +134,15 @@ class silme:
 
 
     def connection(self):
-        connection_s = LabelFrame(self.frame, text="connection", padx=5, pady=5)
+        connection_s = LabelFrame(self.frame, text="internet connection", padx=5, pady=5)
         connection_s.grid(sticky=E+W)
         Entry(self.frame, state="readonly", textvariable=self.connection_, width=50).grid(in_=connection_s)
+
+
+    def silme_conn(self):
+        silme_connection_s = LabelFrame(self.frame, text="silme connection", padx=5, pady=5)
+        silme_connection_s.grid(sticky=E+W)
+        Entry(self.frame, state="readonly", textvariable=self.silme_connection_, width=50).grid(in_=silme_connection_s)
 
 
 
