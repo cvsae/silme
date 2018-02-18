@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # Copyright (c) 2017 CVSC
 # Distributed under the MIT/X11 software license, see the accompanying
-# file license.blockt or http://www.opensource.org/licenses/mit-license.php.
+# file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 from main import *
 import sys
