@@ -54,7 +54,7 @@ class silme:
                 self.addr_.set(addr)
                 self.balance_.set(CWalletDB().GetBalance())
                 self.binfo_.set(self.blockchaininfo())
-                time.sleep(5)
+                time.sleep(3)
 
 
     def sosm(self):

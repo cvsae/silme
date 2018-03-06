@@ -9,11 +9,12 @@ from os.path import expanduser
 from termcolor import colored
 from sys import platform
 from construct import *
-from bitcoin import *
+from pybitcointools import *
 import logging
 import sqlite3
 import socket
 import string
+import struct
 
 
 
