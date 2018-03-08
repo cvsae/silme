@@ -26,6 +26,62 @@ Start Mining using the start button in mining section, when you will find a vail
 Send coin section take 2 arguments, first to: the recipten pubkey and and second anount: the amount wich you want to sent to argument 1 pubkey
 
 
-## BLOCKCGAIN INFO
+## Keys
 
-In blockchain section you can find how many blocks you have find and the current difficulty
+``` python
+CKey().MakeNewKey() # Generate a new private key 
+CKey().GetPubKey(priv) # Get pubkey of the given private key 
+CKey().GetAddress(pubkey) # Get address of the given pubkey
+
+```
+
+## Wallet
+
+``` python
+CWalletDB().WriteKey(key, pubkey) # Write a private key and their pubkey to wallet db
+CWalletDB().IsMineKey(pubkey) # Return True if the give pubkey is in wallet
+CWalletDB().GetMyAddresses() # Return a list of addresses from our wallet
+CWalletDB().GetBalance() # Return wallet balance
+CWalletDB().FindHash(amount) # Return a tx hash to use as input for a new transaction, tx hash must have the specified amount
+CWalletDB().FindAddrFromHash(txhash) # Return the private key asociated with txhash
+CWalletDB().GenerateTransaction(amount, recipten) # Generate a new transaction
+
+```
+
+## CBlockIndex
+
+``` python
+CBlockIndex() # Return info of the give blockhash or height
+CBlockIndex(@HashOrHeight).Version() # Return @HashOrHeight version
+CBlockIndex(@HashOrHeight).Prev() # Return @HashOrHeight previous block hash 
+CBlockIndex(@HashOrHeight).Merkle() # Return @HashOrHeight merkle root 
+CBlockIndex(@HashOrHeight).Time() # Return @HashOrHeight time 
+CBlockIndex(@HashOrHeight).Bits() # Return @HashOrHeight bits 
+CBlockIndex(@HashOrHeight).Nonce() # Return @HashOrHeight nonce 
+
+```
+
+## CTxIndex
+
+``` python
+CTxIndex() # Return info of the give transaction hash
+CTxIndex(@tx_hash).Height() # Return the height of block of the give tx_hash
+CTxIndex(@tx_hash).Version() # Return @tx_hash version 
+CTxIndex(@tx_hash).Time() # Return @tx_hash time 
+CTxIndex(@tx_hash).Value() # Return @tx_hash value
+CTxIndex(@tx_hash).InputScript() # Return @tx_hash input_script 
+CTxIndex(@tx_hash).OutputScript() # Return @tx_hash output_script 
+
+```
+
+## CBlockchainDB
+
+``` python
+CBlockchainDB() # Return info about blockchain
+CBlockchainDB().getBestHeight() # Return the best height in the blockchain
+CBlockchainDB().GetBestHash() # Return the best hash in the blockchain
+CBlockchainDB().haveHash(@hash) # Return True if the give hash already exists False if not
+
+```
+
+
