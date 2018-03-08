@@ -27,6 +27,15 @@ cd silme
 
 # USAGE
 
+# RPC
+
+Silme supports rpc commands
+``` bash
+./silmed start - Start rpc server
+./silmed stop - Stop rpc server
+./silmed help - Get a list of the available commands
+```
+
 ## MINING
 
 Start Mining using the start button in mining section, when you will find a vailid block you will credit the coinbase transaction value, to stop mining click the stop button in mining section, alternative for testing purposes you can use ./miner -d 1 to enable miining with debug results should be 
