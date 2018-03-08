@@ -1,4 +1,14 @@
-Silme is a simple approach of cryptocurrency writen in python, at this time there is 1 prerelease version for testing porpuse p2p network is not implented, you can mine blocks and create transactions but cant broadcast them to other peers 
+# Silme
+
+A simple implementation of Blockchain writen in python, using silme you can generate new blocks (pow sha256) and create transactions, node is not implemented yet so the new transactions and blocks cant be broadcasted to other peers
+
+## TODO
+
+You can contribute to silme, simple open a pull request 
+
+- [ ] Implement auth to rpc serer (user, password)
+- [ ] Fix GetNextWorkRequired
+- [ ] Implement p2p Networking(Node)
 
 # INSTAL SILME
 ``` bash
