@@ -17,6 +17,10 @@ import string
 import struct
 
 
+bnProofOfWorkLimit = 0x00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+
+
+
 
 def GetAppDir():
     # currently suppports linux 
@@ -836,18 +840,112 @@ def GenerateNewKey():
    
 def GetNextWorkRequired():
 
-
+    # latest block hash 
     pindexLast = CBlockchainDB().GetBestHash()
-
-    nTargetTimespan = 14 * 24 * 60 * 60 
-    nTargetSpacing = 10 * 60
+    
+    # Difficulty will change every 1200 seconds or 20 minuntes
+    nTargetTimespan = 1000 
+    # We need a new block every 30 seconds
+    nTargetSpacing = 200
+    # That give us a interval 40 blocks
     nInterval = nTargetTimespan / nTargetSpacing
     
     
-    # Genesis block
+    # if the last block height == 1 return the minimun diif
     if CBlockIndex(pindexLast).Height() == 1:
         return 0x1e0fffff
-    return CBlockIndex(pindexLast).Bits()
+
+
+    # Only change once per interval
+    if ((CBlockIndex(pindexLast).Height()+1) % nInterval != 0):
+        # Return the last block bits (difficulty)
+        return CBlockIndex(pindexLast).Bits()
+
+
+    # Go back by what we want to be 20 minuntes worth of blocks
+    # nActualTimespan is the avg time of the last 40 blocks, example if each of the last 40 blocks took 30 seconds nActualTimespan will be 1200
+    nActualTimespan = CBlockIndex(pindexLast).Time() - CBlockIndex(CBlockIndex(pindexLast).Height() - nInterval + 2).Time()
+    # so if the nActualTimespan is bigger the nTargetTimespan means that blocks are mined slowly, difficulty will be reduced,
+    # if the nActualTimespan is lower than nTargetTimespan means that blocks are mined quick, difficulty will be increased
+
+    logg("nActualTimespan = %d  before bounds\n" %nActualTimespan)
+
+    if nActualTimespan < nTargetTimespan/4:
+        nActualTimespan = nTargetTimespan/4
+    if nActualTimespan > nTargetTimespan*4:
+        nActualTimespan = nTargetTimespan*4
+
+    bnNew = bits2target(CBlockIndex(pindexLast).Bits())
+    bnNew *= nActualTimespan
+    bnNew /= nTargetTimespan
+
+    if bnNew > bnProofOfWorkLimit:
+        bnNew = bnProofOfWorkLimit
+
+    
+
+    logg("\n\n\nGetNextWorkRequired RETARGET *****\n")
+    logg("nTargetTimespan = %d    nActualTimespan = %d\n" %(nTargetTimespan, nActualTimespan,))
+    logg("Last %d blocks time average was %d\n" %(nInterval, nActualTimespan,))
+    logg("Before: %08x  %s\n" %(CBlockIndex(pindexLast).Bits(), nActualTimespan,))
+    logg("After:  %08x  %s\n" %(GetCompact(int(bnNew)), nActualTimespan,))
+
+    return target2bits(bnNew)
+
+
+
+
+def target2bits(target):
+        MM = 256*256*256
+        c = ("%064X"%int(target))[2:]
+        i = 31
+        while c[0:2]=="00":
+            c = c[2:]
+            i -= 1
+        c = int('0x'+c[0:6],16)
+        if c >= 0x800000:
+            c //= 256
+            i += 1
+        new_bits = c + MM * i
+        return new_bits
+
+
+def num2mpi(n):
+        """convert number to MPI string"""
+        if n == 0:
+                return struct.pack(">I", 0)
+        r = ""
+        neg_flag = bool(n < 0)
+        n = abs(n)
+        while n:
+                r = chr(n & 0xFF) + r
+                n >>= 8
+        if ord(r[0]) & 0x80:
+                r = chr(0) + r
+        if neg_flag:
+                r = chr(ord(r[0]) | 0x80) + r[1:]
+        datasize = len(r)
+        return struct.pack(">I", datasize) + r
+
+
+
+def GetCompact(n):
+        """convert number to bc compact uint"""
+        mpi = num2mpi(n)
+        nSize = len(mpi) - 4
+        nCompact = (nSize & 0xFF) << 24
+        if nSize >= 1:
+                nCompact |= (ord(mpi[4]) << 16)
+        if nSize >= 2:
+                nCompact |= (ord(mpi[5]) << 8)
+        if nSize >= 3:
+                nCompact |= (ord(mpi[6]) << 0)
+
+        return nCompact
+
+
+
+
 
 
 
