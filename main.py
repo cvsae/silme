@@ -843,11 +843,11 @@ def GetNextWorkRequired():
     # latest block hash 
     pindexLast = CBlockchainDB().GetBestHash()
     
-    # Difficulty will change every 1200 seconds or 20 minuntes
-    nTargetTimespan = 1000 
-    # We need a new block every 30 seconds
-    nTargetSpacing = 200
-    # That give us a interval 40 blocks
+    # Difficulty will change every 600 seconds or 10 minuntes
+    nTargetTimespan = 600 
+    # We need a new block every 100 seconds
+    nTargetSpacing = 100
+    # That give us a interval 6 blocks
     nInterval = nTargetTimespan / nTargetSpacing
     
     
@@ -862,8 +862,8 @@ def GetNextWorkRequired():
         return CBlockIndex(pindexLast).Bits()
 
 
-    # Go back by what we want to be 20 minuntes worth of blocks
-    # nActualTimespan is the avg time of the last 40 blocks, example if each of the last 40 blocks took 30 seconds nActualTimespan will be 1200
+    # Go back by what we want to be 10 minuntes worth of blocks
+    # nActualTimespan is the avg time of the last 6 blocks, example if each of the last 6 blocks took 30 seconds nActualTimespan will be 180
     nActualTimespan = CBlockIndex(pindexLast).Time() - CBlockIndex(CBlockIndex(pindexLast).Height() - nInterval + 2).Time()
     # so if the nActualTimespan is bigger the nTargetTimespan means that blocks are mined slowly, difficulty will be reduced,
     # if the nActualTimespan is lower than nTargetTimespan means that blocks are mined quick, difficulty will be increased
