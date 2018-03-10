@@ -7,7 +7,7 @@ A simple implementation of Blockchain writen in python, using silme you can gene
 You can contribute to silme, simple open a pull request 
 
 - [ ] Implement auth to rpc serer (user, password)
-- [ ] Fix GetNextWorkRequired
+- [ ] Fix GetNextWorkRequired https://github.com/cvsae/silme/commit/bf8771aa4df446f565e74be68889cea37925790f
 - [ ] Implement p2p Networking(Node)
 
 # INSTAL SILME
