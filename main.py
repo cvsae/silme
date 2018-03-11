@@ -17,8 +17,10 @@ import string
 import struct
 
 
+# One silme can be split into 100000000 satoshi
+COIN = 100000000
+# Proof of Work limit 
 bnProofOfWorkLimit = 0x00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-
 
 
 
@@ -78,6 +80,11 @@ if not os.path.exists(GetAppDir()):
         # add genesis to database 
         blockchain_cursor.execute("INSERT INTO blocks VALUES (?,?,?)", (1, "000009cb25c348b85b01819c52402adea224580263fbe9b915be8502c5220f82", "0100000000000000000000000000000000000000000000000000000000000000000000007a98ffba469fe652771c5bb7b236248b4d78e4127ef369f1b07e1071da069e2fba756b5affff0f1ef7830e00")) # Insert a row of data
         blockchain_conn.commit() 
+        
+        mempool_conn = sqlite3.connect(GetAppDir() + "/mempool.db")
+        mempool_cursor = mempool_conn.cursor()
+        mempool_cursor.execute("CREATE TABLE transactions (version, prev, time, value, hash, input_script, output_script, signature)")
+        mempool_conn.commit()
 
     
 def internetConnection(host="8.8.8.8", port=53, timeout=3):
@@ -257,7 +264,7 @@ class CWalletDB(object):
 
 
 
-        return balance / 100000000
+        return balance / COIN
 
 
     def FindHash(self, amount):
@@ -322,36 +329,60 @@ class CWalletDB(object):
 
 
 
-
 class Mempool(object):
-    
-    # initilize empty mempool
-    mempool = []
+
+
+    def __init__(self):
+        # initilize empty mempool
+        self.mem_conn = sqlite3.connect(GetAppDir() + "/mempool.db")
+        self.mem_conn.text_factory = str
+        self.mem_cur = self.mem_conn.cursor()
+        
+
+
+
+    def HaveHash(self, tx):
+        # calculate transaction hash
+        thisHash = hashlib.sha256(hashlib.sha256(str(tx)).hexdigest()).hexdigest()
+        # check if tx already in mempool
+        mempool_txs = self.mem_cur.execute("SELECT * FROM transactions").fetchall()
+        return thisHash in mempool_txs
+
 
 
     def addtx(self, tx):
-        if CBlockchain().isVaildTx(tx):
-            if not self.haveTx(tx):
-                self.mempool.append(tx)
-                logg("Mempool() : Transaction %s added to mempool" %(hashlib.sha256(hashlib.sha256(str(tx)).hexdigest()).hexdigest(),))
-                return True
-            logg("Mempool() : Transaction %s already to mempool" %(hashlib.sha256(hashlib.sha256(str(tx)).hexdigest()).hexdigest(),))
-            return False, "Already have"
-        logg("Mempool() : Transaction %s is invailed" %(hashlib.sha256(hashlib.sha256(str(tx)).hexdigest()).hexdigest(),))
-        return False, "Invaild tx"
+        # add tx to mem pool
+        
+        if not self.HaveHash(tx):
+            self.mem_cur.execute("INSERT INTO transactions VALUES (?,?,?,?,?,?,?, ?)", (tx["version"], tx["prev_out"], tx["time"], tx["value"], hashlib.sha256(hashlib.sha256(str(tx)).hexdigest()).hexdigest(), tx["input_script"], tx["output_script"], tx["signature"])) # Insert a row of data
+            self.mem_conn.commit()
+            logg("Mempool() : Transaction %s added to mempool" %(hashlib.sha256(hashlib.sha256(str(tx)).hexdigest()).hexdigest(),))
+            return True
+        logg("Mempool() : Transaction %s already to mempool" %(hashlib.sha256(hashlib.sha256(str(tx)).hexdigest()).hexdigest(),))
+        return False, "Already have"
+        
+
+    def CountTxs(self):
+        # get transaction lenght
+        mempool_txs = self.mem_cur.execute("SELECT * FROM transactions").fetchall()
+        return len(mempool_txs)
 
 
-
-    def haveTx(self, tx):
-        return tx in self.mempool
-
-
-    def counttxs(self):
-        return len(self.mempool)
+    def GetSize(self):
+        mempool_txs = self.mem_cur.execute("SELECT * FROM transactions").fetchall()
+        mempool_size = (Decimal(sys.getsizeof(str(mempool_txs))) / Decimal(1000000))
+        return mempool_size  # return Decimal
 
 
-    def gettransactions(self):
-        return self.mempool
+    def gettx(self, n):
+        return self.mem_cur.execute("SELECT * FROM transactions").fetchall()[n]
+
+
+    def RemoveTx(self, tx):
+
+        query = 'delete from transactions where hash=?'
+        self.mem_cur.execute(query, (tx.strip(),))
+        self.mem_conn.commit()
 
 
 
@@ -808,7 +839,7 @@ class Proccess(object):
 
 
 def GetBlockValue(height, fees):
-    subsidy = 50 * 100000000
+    subsidy = 50 * COIN
     subsidy >>= (height / 210000)
     return subsidy + fees
 
