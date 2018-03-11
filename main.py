@@ -968,6 +968,12 @@ def CalculateDiff():
     y = bits2target(GetNextWorkRequired())
     return p / y
 
+
+def NetworkHashrate():
+    # network hashrate in ghs
+    difficulty = CalculateDiff()
+    return difficulty * 2**32 / 100 / 1000000000
+
    
 
 def HashesTowin():
