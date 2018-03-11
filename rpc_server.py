@@ -101,6 +101,7 @@ if __name__ == '__main__':
     server.register_function(GetBestHeight, 'getbestheight')
     server.register_function(GetBestHash, 'getbesthash')
     server.register_function(GetDifficulty, 'getdifficulty')
+    server.register_function(NetHashRate, 'nethashrate')
     #wallet
     server.register_function(GetMyAddresses, 'getmyaddresses')
     server.register_function(GetNewAddress, 'getnewaddress')
