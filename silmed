@@ -1,8 +1,8 @@
 #! /bin/bash
 
-electrum_config=$HOME"/.silme/silme.conf"
-if [ ! -f $electrum_config ]; then
-    echo "$electrum_config does not exist"
+silme_config=$HOME"/.silme/silme.conf"
+if [ ! -f $silme_config ]; then
+    echo "$silme_config does not exist"
     echo "please run 'configure'"
     exit 1
 fi
@@ -127,7 +127,7 @@ case "$1" in
 	$0 start
 	;;
     *)
-	echo "Usage: ./ectrond {start|stop|status|help}"
+	echo "Usage: ./silmed {start|stop|status|help}"
 	exit 1
 	;;
 esac
