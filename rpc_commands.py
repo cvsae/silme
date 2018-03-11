@@ -41,6 +41,9 @@ def GetNewAddress():
     key = GenerateNewKey()
     return CKey().GetAddress(key)
 
+def NetHashRate():
+    # return network hashrate in ghs
+    return NetworkHashrate()
 
 def GetBalance():
     return CWalletDB().GetBalance()
