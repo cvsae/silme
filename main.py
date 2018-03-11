@@ -260,8 +260,7 @@ class CWalletDB(object):
                 for ttx in txs:
                     if ttx[2] == thisHash:
                         # has spend coins
-                        balance -= ttx[4]
-
+                        balance -= ttx[4] * COIN
 
 
         return balance / COIN
