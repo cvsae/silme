@@ -52,9 +52,7 @@ def Miner(debug, blocks):
         pblock = CBlock()
         pblock.Nullvtx()
         pblock.vtx.append(txNew)
-
-        #Collect the latest transactions into the block
-        
+  
 
         # coinbase fees 
         got_a_fee = 90
@@ -66,6 +64,34 @@ def Miner(debug, blocks):
         pblock.vtx[0]["value"] = GetBlockValue(inWork, got_a_fee)
         # sign the transaction 
         pblock.vtx[0]["signature"] = Sig().SSign(str(pblock.vtx[0]), privatekey)
+        
+        
+        #Collect the latest transactions into the block
+
+
+        for x in xrange(0, Mempool().CountTxs()):
+            tx = Mempool().gettx(x)
+            txNew = CTransaction()
+            
+            txNew.add("version", tx[0])
+            txNew.add("prev_out", tx[1])
+            txNew.add("time", tx[2])
+            txNew.add("value", tx[3])
+            txNew.add("input_script", tx[5])
+            txNew.add("output_script", tx[6])
+            txNew.add("signature", tx[7])
+
+            pblock.vtx.append(txNew)
+
+
+        
+        # a list with sellected txs hashes from mempoolk
+        included_hashes = []
+
+        for x in xrange(1, len(pblock.vtx)):
+            # hash the transactions, not the coinbase tx
+            thisHash = hashlib.sha256(hashlib.sha256(str(pblock.vtx[x])).hexdigest()).hexdigest()
+            included_hashes.append(thisHash)
 
 
 
@@ -107,6 +133,8 @@ def Miner(debug, blocks):
             logg("Block accepted\n")
             if CBlockchainDB().insertBlock(pblock, data_block):
                 logg("Block successfull added to database")
+                for txhash in included_hashes:
+                    Mempool().RemoveTx(txhash)
         else:
             logg("Block failed")
 
