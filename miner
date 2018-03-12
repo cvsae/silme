@@ -52,20 +52,9 @@ def Miner(debug, blocks):
         pblock = CBlock()
         pblock.Nullvtx()
         pblock.vtx.append(txNew)
-  
 
-        # coinbase fees 
-        got_a_fee = 90
-        # block nbits 
-        pblock.nBits = nBits
-        # blockk timestamp
-        pblock.nTime = int(time.time()) 
-        # collect fees + block reward into coinbade tx 
-        pblock.vtx[0]["value"] = GetBlockValue(inWork, got_a_fee)
-        # sign the transaction 
-        pblock.vtx[0]["signature"] = Sig().SSign(str(pblock.vtx[0]), privatekey)
-        
-        
+
+
         #Collect the latest transactions into the block
 
 
@@ -92,6 +81,20 @@ def Miner(debug, blocks):
             # hash the transactions, not the coinbase tx
             thisHash = hashlib.sha256(hashlib.sha256(str(pblock.vtx[x])).hexdigest()).hexdigest()
             included_hashes.append(thisHash)
+  
+
+        # coinbase fees 
+        got_a_fee = 90
+        # block nbits 
+        pblock.nBits = nBits
+        # blockk timestamp
+        pblock.nTime = int(time.time()) 
+        # collect fees + block reward into coinbade tx 
+        pblock.vtx[0]["value"] = GetBlockValue(inWork, got_a_fee)
+        # sign the transaction 
+        pblock.vtx[0]["signature"] = Sig().SSign(str(pblock.vtx[0]), privatekey)
+        
+        
 
 
 

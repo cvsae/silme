@@ -113,7 +113,7 @@ class silme:
         amount = self.amount.get()
         recipt = self.to.get()
         
-        if not CWalletDB().GenerateTransaction(int(amount), str(recipt)):
+        if not CWalletDB().GenerateTransaction(float(amount), str(recipt)):
             tkMessageBox.showinfo("Error", CWalletDB().GenerateTransaction(int(amount), str(recipt)))
             return 0
         else:

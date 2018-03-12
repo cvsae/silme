@@ -263,7 +263,7 @@ class CWalletDB(object):
                         balance -= ttx[4] * COIN
 
 
-        return balance / COIN
+        return float(balance / COIN)
 
 
     def FindHash(self, amount):
