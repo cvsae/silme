@@ -747,6 +747,22 @@ class Proccess(object):
         if CBlockchainDB().haveHash(block_hash):
             logg("ProcessBlock() : already have block %s %s" %(CBlockIndex(block_hash).getHeight(), block_hash,))
             return False 
+        
+        # Check prev block
+        if CBlockchainDB().GetBestHash() != block[8:72]:
+            logg("CheckBlock() : prev block not found")
+            return False
+
+        # Check timestamp against prev
+        if CBlockIndex(CBlockchainDB().GetBestHash()).Time() >= decode_uint32(a2b_hex(block[136:144])):
+            logg("CheckBlock() : block's timestamp is too early")
+            return False
+
+
+        # Check Proof Of Work
+        if decode_uint32(a2b_hex(block[144:152])) != GetNextWorkRequired():
+            logg("CheckBlock() : incorrect proof of work")
+            return False
 
 
         # Preliminary checks
