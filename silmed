@@ -103,6 +103,8 @@ case "$1" in
     echo
     echo "--------------  Mining --------------"
     echo "mempoolcount - Return mempool transactions count"
+    echo "-------------------------------------"
+    echo "version - Return silme version"
 
 
 
@@ -110,7 +112,7 @@ case "$1" in
 
 
 	;;
-    getbesthash|getbestheight|getdifficulty|getnewaddress|getmyaddresses|getbalance|nethashrate|mempoolcount)
+    getbesthash|getbestheight|getdifficulty|getnewaddress|getmyaddresses|getbalance|nethashrate|mempoolcount|version)
 	if [ ! "$PID" ]; then
 	    echo "Server not running"
 	    exit

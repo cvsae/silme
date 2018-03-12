@@ -4,6 +4,7 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 from main import *
+from version import _version
 import sys
 
 
@@ -51,4 +52,8 @@ def GetBalance():
 
 def MemCount():
     return Mempool().counttxs()
+
+
+def Version():
+    return _version
 

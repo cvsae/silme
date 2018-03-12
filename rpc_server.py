@@ -108,6 +108,8 @@ if __name__ == '__main__':
     server.register_function(GetBalance, 'getbalance')
     #mining 
     server.register_function(MemCount, 'mempoolcount')
+    #
+    server.register_function(Version, 'version')
 
 
     # signals
