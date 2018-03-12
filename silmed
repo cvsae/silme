@@ -12,7 +12,7 @@ fi
 function read_config()
 {
     text=$1
-    echo `grep -e ^$text $electrum_config |awk -F\= '{print $2}' | tail -n 1| tr -d ' '`
+    echo `grep -e ^$text $silme_config |awk -F\= '{print $2}' | tail -n 1| tr -d ' '`
 }
 
 # read path from config
