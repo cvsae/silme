@@ -858,6 +858,31 @@ def GetBlockValue(height, fees):
     subsidy >>= (height / 210000)
     return subsidy + fees
 
+def GetBalance(pub):
+    # get balance of specifiec key
+
+    # balance
+    balance = 0 
+
+    # get all blockchain transactions
+    conn = sqlite3.connect(GetAppDir() +  "/blockchain.db")
+    conn.text_factory = str
+    cur = conn.cursor() 
+    cur.execute("SELECT * FROM transactions")
+    txs = cur.fetchall()
+
+    # calculate balance  
+    for transaction in txs:
+        pubkey = transaction[7].encode("hex_codec")[2:132]
+
+        if pub == pubkey:
+            balance += transaction[4]
+            thisHash = transaction[5]
+            # check if the hash have spend inputs 
+            for ttx in txs:
+                if ttx[2] == thisHash:
+                    balance -= ttx[4] * COIN
+    return balance 
 
 
 
