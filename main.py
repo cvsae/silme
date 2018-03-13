@@ -17,6 +17,7 @@ import string
 import struct
 
 
+
 # One silme can be split into 100000000 satoshi
 COIN = 100000000
 # Proof of Work limit 
@@ -167,6 +168,15 @@ class Sig(object):
 class CBlockchain(object):
 
 
+    def GetTransactions(self):
+        # get all blockchain transactions
+        conn = sqlite3.connect(GetAppDir() +  "/blockchain.db")
+        conn.text_factory = str
+        cur = conn.cursor() 
+        cur.execute("SELECT * FROM transactions")
+        return cur.fetchall()
+
+
     def isVaildTx(self, tx):
         
         amount = tx["value"]
@@ -241,48 +251,31 @@ class CWalletDB(object):
 
         balance = 0 
 
-        # get all blockchain transactions
-        conn = sqlite3.connect(GetAppDir() +  "/blockchain.db")
-        conn.text_factory = str
-        cur = conn.cursor() 
-        cur.execute("SELECT * FROM transactions")
-        txs = cur.fetchall()
-
-
         # calculate balance  
-
-        for transaction in txs:
+        for transaction in CBlockchain().GetTransactions():
             pubkey = transaction[7].encode("hex_codec")[2:132]
             if self.IsMineKey(pubkey):
                 balance += transaction[4]
                 thisHash = transaction[5]
                 # check if the hash have spend inputs 
-                for ttx in txs:
+                for ttx in CBlockchain().GetTransactions():
                     if ttx[2] == thisHash:
                         # has spend coins
                         balance -= ttx[4] * COIN
-
-
+    
         return float(balance / COIN)
 
 
     def FindHash(self, amount):
-        # get all blockchain transactions
-        conn = sqlite3.connect(GetAppDir() +  "/blockchain.db")
-        conn.text_factory = str
-        cur = conn.cursor() 
-        cur.execute("SELECT * FROM transactions")
-        txs = cur.fetchall()
-
 
         ntxs = []
 
-        for transaction in txs:
+        for transaction in CBlockchain().GetTransactions():
             pubkey = transaction[7].encode("hex_codec")[2:132]
             if self.IsMineKey(pubkey):
                 thisHash = transaction[5]
                 if transaction[4] >= amount:
-                    for ttx in txs:
+                    for ttx in CBlockchain().GetTransactions():
                         if type(ttx[2] == int):
                             return thisHash
 
@@ -330,7 +323,10 @@ class CWalletDB(object):
         if Mempool().addtx(txNew):
             return True
         return False
-        
+
+
+
+
 
 
 
@@ -371,6 +367,14 @@ class Mempool(object):
         # get transaction lenght
         mempool_txs = self.mem_cur.execute("SELECT * FROM transactions").fetchall()
         return len(mempool_txs)
+
+
+
+    def GetTransactions(self):
+        # get all mempool transactions
+        self.mem_cur.execute("SELECT * FROM transactions")
+        return self.mem_cur.fetchall()
+
 
 
     def GetSize(self):
@@ -864,6 +868,8 @@ def GetBlockValue(height, fees):
     subsidy >>= (height / 210000)
     return subsidy + fees
 
+
+
 def GetBalance(pub):
     # get balance of specifiec key
 
@@ -871,11 +877,7 @@ def GetBalance(pub):
     balance = 0 
 
     # get all blockchain transactions
-    conn = sqlite3.connect(GetAppDir() +  "/blockchain.db")
-    conn.text_factory = str
-    cur = conn.cursor() 
-    cur.execute("SELECT * FROM transactions")
-    txs = cur.fetchall()
+    txs = CBlockchain().GetTransactions()
 
     # calculate balance  
     for transaction in txs:
