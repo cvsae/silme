@@ -305,26 +305,32 @@ class CWalletDB(object):
 
 
         if mybalance < amount:
+            # not enought balance to create this transaction
+            logg("GenerateTransaction() Failed not enought balance to create this transaction")
             return False
 
-        if len(recipten) == 130:
-            # collect hash
-            thisHash = self.FindHash(amount)
-            # privkey of the input hash 
-            privv = self.FindAddrFromHash(thisHash)
-        
-            txNew = CTransaction()
-            txNew.add("version", 1)
-            txNew.add("prev_out", thisHash)
-            txNew.add("time", int(time.time()))
-            txNew.add("value", amount)
-            txNew.input_script("SilmeTransaction")
-            txNew.output_script(recipten)
-            txNew.add("signature", Sig().SSign(str(txNew), privv))
-            Mempool().addtx(txNew)
-            return True
-        else:
+        if len(recipten) != 130:
+            # not vaild recipten key
+            logg("GenerateTransaction() Failed not vaild recipten key")
             return False
+            
+        # collect hash
+        thisHash = self.FindHash(amount)
+        # privkey of the input hash 
+        priv = self.FindAddrFromHash(thisHash)
+        
+        txNew = CTransaction()
+        txNew.add("version", 1)
+        txNew.add("prev_out", thisHash)
+        txNew.add("time", int(time.time()))
+        txNew.add("value", amount)
+        txNew.input_script("SilmeTransaction")
+        txNew.output_script(recipten)
+        txNew.add("signature", Sig().SSign(str(txNew), priv))
+        if Mempool().addtx(txNew):
+            return True
+        return False
+        
 
 
 
