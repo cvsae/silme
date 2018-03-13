@@ -1,6 +1,14 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## Dev 0.0.2
+
+- Added CBlockchain().GetTransactions() | Return all blockchain transaction
+- Added Mempool().GetTransactions() | returns all mempool transactions
+- Fix Memmpool().GetSize() | Return mempool size in bytes
+- Added blocksize limit at 1MB
+- Added log failrus in GenerateTransaction
+
 ## Dev 0.0.1
 
 - Fix GetNextWorkRequired | Difficulty Changes every 6 blocks
