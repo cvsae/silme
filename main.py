@@ -22,6 +22,12 @@ import struct
 COIN = 100000000
 # Proof of Work limit 
 bnProofOfWorkLimit = 0x00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+# Reward Per block
+nCoin = 50
+# Halving Every 210000 blocks
+nSubsibyHalvingInterval = 210000
+# MaxBlockSize
+nMaxSize = 1000000 # 1MB
 
 
 
@@ -378,10 +384,11 @@ class Mempool(object):
 
 
     def GetSize(self):
+        fsize = 0 
         mempool_txs = self.mem_cur.execute("SELECT * FROM transactions").fetchall()
-        mempool_size = (Decimal(sys.getsizeof(str(mempool_txs))) / Decimal(1000000))
-        return mempool_size  # return Decimal
-
+        for tx in mempool_txs:
+            ff += sys.getsizeof(tx)
+        return fsize
 
     def gettx(self, n):
         return self.mem_cur.execute("SELECT * FROM transactions").fetchall()[n]
@@ -752,6 +759,9 @@ class Proccess(object):
         logg("Proccessing new block\n")
         # calculate hash 
         block_hash = hashlib.sha256(hashlib.sha256(block).digest()).digest()[::-1].encode('hex_codec')
+
+
+
         
         # Check for duplicate
         if CBlockchainDB().haveHash(block_hash):
@@ -772,6 +782,11 @@ class Proccess(object):
         # Check Proof Of Work
         if decode_uint32(a2b_hex(block[144:152])) != GetNextWorkRequired():
             logg("CheckBlock() : incorrect proof of work")
+            return False
+
+        # Check size 
+        if sys.getsizeof(pblock.vtx) > nMaxSize:
+            logg("CheckBlock() : Block size failed")
             return False
 
 
@@ -864,8 +879,8 @@ class Proccess(object):
 
 
 def GetBlockValue(height, fees):
-    subsidy = 50 * COIN
-    subsidy >>= (height / 210000)
+    subsidy = nCoin * COIN
+    subsidy >>= (height / nSubsibyHalvingInterval)
     return subsidy + fees
 
 

@@ -53,26 +53,27 @@ def Miner(debug, blocks):
         pblock.Nullvtx()
         pblock.vtx.append(txNew)
 
-
-
         #Collect the latest transactions into the block
 
 
+        thisSize = 0 
+
+
         for x in xrange(0, Mempool().CountTxs()):
+
             tx = Mempool().gettx(x)
-            txNew = CTransaction()
-            
-            txNew.add("version", tx[0])
-            txNew.add("prev_out", tx[1])
-            txNew.add("time", tx[2])
-            txNew.add("value", tx[3])
-            txNew.add("input_script", tx[5])
-            txNew.add("output_script", tx[6])
-            txNew.add("signature", tx[7])
+            thisSize += sys.getsizeof(tx)
+            if thisSize < nMaxSize:
+                txNew = CTransaction()
+                txNew.add("version", tx[0])
+                txNew.add("prev_out", tx[1])
+                txNew.add("time", tx[2])
+                txNew.add("value", tx[3])
+                txNew.add("input_script", tx[5])
+                txNew.add("output_script", tx[6])
+                txNew.add("signature", tx[7])
 
-            pblock.vtx.append(txNew)
-
-
+                pblock.vtx.append(txNew)
         
         # a list with sellected txs hashes from mempoolk
         included_hashes = []
