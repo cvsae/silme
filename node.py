@@ -1,7 +1,6 @@
 #!/usr/bin/python
-# Copyright (c) 2017 CVSC
-# Distributed under the MIT/X11 software license, see the accompanying
-# file COPYING or http://www.opensource.org/licenses/mit-license.php.
+# Original Author : https://github.com/benediktkr at /ncpoc
+# Modified by CVSC
 
 from main import *
 import messages
