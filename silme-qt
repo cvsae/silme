@@ -30,12 +30,15 @@ class silme:
 
 
         thread.start_new_thread(self._update, ())
+        
+
 
         self.addr()
         self.mining()
         self.balance()
         self.send()
         self.blockchain()
+
 
 
     def blockchaininfo(self):

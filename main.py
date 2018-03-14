@@ -765,7 +765,7 @@ class Proccess(object):
         
         # Check for duplicate
         if CBlockchainDB().haveHash(block_hash):
-            logg("ProcessBlock() : already have block %s %s" %(CBlockIndex(block_hash).getHeight(), block_hash,))
+            logg("ProcessBlock() : already have block %s %s" %(CBlockIndex(block_hash).Height(), block_hash,))
             return False 
         
         # Check prev block
