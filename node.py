@@ -103,8 +103,11 @@ class NCProtocol(Protocol):
                 self.handle_Sync(line)
             elif envelope["msgtype"] == "getblock":
                 self.handle_ReceivedBlock(line)
-            elif envelope["msgtype"] == "getmemppol":
+            elif envelope["msgtype"] == "a_mempool":
                 self.SendMempool()
+            elif envelope["msgtype"] == "s_memppol":
+                self.Handle_Mempool(line)
+
 
 
     def SendMempool(self):
@@ -112,6 +115,15 @@ class NCProtocol(Protocol):
         mempool_txs = Mempool().GetTransactions()
         message = create_send_mempool(self.nodeid, mempool_txs)
         self.write(message)
+
+
+    def Handle_Mempool(self, data):
+        logg("Received mempool transactions from %s" %self.remoteip)
+        for line in data.splitlines():
+            line = line.strip()
+            envelope = messages.read_envelope(line)
+            transactions = envelope["data"]["transactions"]
+            Mempool().gotMempool(transactions)
 
 
 
