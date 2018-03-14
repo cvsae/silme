@@ -1,6 +1,14 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## Dev 0.0.3
+
+- Store transactions signature
+- Store blocks nonce
+- Proccess new block received by peer, currently supports blocks only coinbase transactions.
+- Add node
+
+
 ## Dev 0.0.2
 
 - Added CBlockchain().GetTransactions() | Return all blockchain transaction
