@@ -874,6 +874,70 @@ class Proccess(object):
 
 
         return True
+    
+    
+
+class thisBlock(object):
+
+    # Proccess new block received by peer, and add it to database if is vaild
+    # Return True if vaild False if Not
+    # Only proccess blocks with coinbase transaction, wil be fixed later
+    
+
+
+    def __init__(self, peer, raw, coinbase, transactions, nonce):
+        self.ThisPeer = peer
+        self.thisRaw = raw
+        self.thisCoinbase = coinbase
+        self.thisTransactions = transactions
+        self.thisNonce = nonce
+
+
+
+    def isVaild(self):
+        blk, pblock, = self.Build()
+        blk = blk[0:len(blk) - 4] + struct.pack('<I', self.thisNonce)  
+        if Proccess().thisBlock(blk, pblock, self.thisNonce):
+          logg("Block accepted\n")
+          if CBlockchainDB().insertBlock(pblock, blk, self.thisNonce):
+            logg("Block successfull added to database") 
+            return True
+        return False 
+
+
+
+    def Build(self):
+        pblock = CBlock()
+        pblock.Nullvtx()
+        
+
+        txNew = CTransaction()
+        txNew.add("version", self.thisCoinbase[1])
+        txNew.add("prev_out", self.thisCoinbase[2])
+        txNew.add("time", self.thisCoinbase[3])
+        txNew.add("value", self.thisCoinbase[4])
+        txNew.add("input_script", self.thisCoinbase[6])
+        txNew.add("output_script", self.thisCoinbase[7])
+        txNew.add("signature", self.thisCoinbase[8])
+        
+
+        pblock.vtx.append(txNew)
+
+        
+        pblock.nTime = decode_uint32(a2b_hex(self.thisRaw[136:144]))
+        pblock.nBits = decode_uint32(a2b_hex(self.thisRaw[144:152]))
+
+        tmp_block = tmp()
+
+        tmp_block.nVersion = 1 
+        tmp_block.hashPrevBlock = self.thisRaw[8:72]
+        tmp_block.hashMerkleRoot = a2b_hex(self.thisRaw[72:136])
+        tmp_block.nTime = pblock.nTime
+        tmp_block.nBits = pblock.nBits
+        tmp_block.nNonce = 0  
+
+        blk = tmp_block.build().encode("hex_codec")
+        return blk, pblock
 
 
 
