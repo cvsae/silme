@@ -49,7 +49,12 @@ def create_ask_need_sync(nodeid, hash, height):
 
 def create_send_mempool(nodeid, transactions):
     msg = {"transactions": transactions}
-    return make_envelope("getmemppol", msg, nodeid)
+    return make_envelope("s_mempool", msg, nodeid)
+
+
+def ask_mempool(nodeid):
+    msg = {}
+    return make_envelope("a_mempool", msg, nodeid)
 
 
 def create_reply_need_sync(nodeid, height, bcount):
