@@ -56,7 +56,7 @@ if not os.path.exists(GetAppDir()):
         logg("Initializing empty blockchain database at " + GetAppDir() + "/blockchain.db")
         blockchain_conn = sqlite3.connect(GetAppDir() + "/blockchain.db")
         blockchain_cursor = blockchain_conn.cursor()
-        blockchain_cursor.execute("CREATE TABLE blocks (height INTEGER, hash, raw)")
+        blockchain_cursor.execute("CREATE TABLE blocks (height INTEGER, hash, raw, nonce)")
         blockchain_cursor.execute("CREATE TABLE transactions (block, version, prev, time, value, hash, input_script, output_script, signature)")
         blockchain_conn.commit()
 
@@ -85,7 +85,7 @@ if not os.path.exists(GetAppDir()):
 
 
         # add genesis to database 
-        blockchain_cursor.execute("INSERT INTO blocks VALUES (?,?,?)", (1, "000009cb25c348b85b01819c52402adea224580263fbe9b915be8502c5220f82", "0100000000000000000000000000000000000000000000000000000000000000000000007a98ffba469fe652771c5bb7b236248b4d78e4127ef369f1b07e1071da069e2fba756b5affff0f1ef7830e00")) # Insert a row of data
+        blockchain_cursor.execute("INSERT INTO blocks VALUES (?,?,?,?)", (1, "000009cb25c348b85b01819c52402adea224580263fbe9b915be8502c5220f82", "0100000000000000000000000000000000000000000000000000000000000000000000007a98ffba469fe652771c5bb7b236248b4d78e4127ef369f1b07e1071da069e2fba756b5affff0f1ef7830e00", 0)) # Insert a row of data
         blockchain_conn.commit() 
         
         mempool_conn = sqlite3.connect(GetAppDir() + "/mempool.db")
@@ -619,7 +619,7 @@ class CBlockchainDB(object):
             return False 
 
 
-    def insertBlock(self, pblock, block):
+    def insertBlock(self, pblock, block, nonce):
 
         b_height = self.getBestHeight() + 1 
 
@@ -627,7 +627,7 @@ class CBlockchainDB(object):
 
            
         try:
-            self.cur.execute("INSERT INTO blocks VALUES (?,?,?)", (b_height, b_hash, block))
+            self.cur.execute("INSERT INTO blocks VALUES (?,?,?,?)", (b_height, b_hash, block, nonce))
             self.conn.commit()
             self.insertTxs(b_height, pblock)
         except Exception, e:

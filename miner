@@ -135,7 +135,7 @@ def Miner(debug, blocks):
         # Process this block the same as if we had received it from another node
         if Proccess().thisBlock(data_block, pblock, nonce):
             logg("Block accepted\n")
-            if CBlockchainDB().insertBlock(pblock, data_block):
+            if CBlockchainDB().insertBlock(pblock, data_block, nonce):
                 logg("Block successfull added to database")
                 for txhash in included_hashes:
                     Mempool().RemoveTx(txhash)
