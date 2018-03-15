@@ -320,7 +320,7 @@ class Mempool(object):
                                   tx["output_script"],
                                   tx["signature"])) # Insert a row of data
             self.mem_conn.commit()
-            logging("Mempool() : Transaction %s added to mempool" %(hashlib.sha256(hashlib.sha256(str(tx)).hexdigest()).hexdigest(),))
+            logging.info("Mempool() : Transaction %s added to mempool" %(hashlib.sha256(hashlib.sha256(str(tx)).hexdigest()).hexdigest(),))
             return True
         logging.info("Mempool() : Transaction %s already to mempool" %(hashlib.sha256(hashlib.sha256(str(tx)).hexdigest()).hexdigest(),))
         return False, "Already have"
