@@ -508,7 +508,7 @@ class CTransaction(dict):
 
 class CBlockchainDB(object):
     def __init__(self):
-        self.conn = sqlite3.connect(("{}/blockchain.db"))
+        self.conn = sqlite3.connect("{}/blockchain.db".format(GetAppDir()))
         self.conn.text_factory = str
         self.cur = self.conn.cursor() 
 
