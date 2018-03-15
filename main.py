@@ -16,7 +16,11 @@ import socket
 import string
 import struct
 
-
+# python 3.x compatibility
+try:
+    xrange
+except NameError:
+    xrange = range
 
 # One silme can be split into 100000000 satoshi
 COIN = 100000000
@@ -28,51 +32,40 @@ nCoin = 50
 nSubsibyHalvingInterval = 210000
 # MaxBlockSize
 nMaxSize = 1000000 # 1MB
-
+# logging
+logging.basicConfig(level=logging.INFO, filename="debug.log", format='%(asctime)s %(message)s') # include timestamp
 
 
 def GetAppDir():
     # currently suppports linux 
-    if not platform == "linux":
-        if not platform == "linux2":
-            sys.exit(logg("Error: Unsupported platform"))
-    return expanduser("~") + "/" + ".silme"
-
-
-logging.basicConfig(level=logging.INFO, filename="debug.log", format='%(asctime)s %(message)s') # include timestamp
-
-
-def logg(msg): logging.info(msg)
-
+    if not platform in ["linux", "linux2"]:
+        sys.exit(logging.info("Error: Unsupported platform"))
+    return "{}/.silme".format(expanduser("~"))
 
 
 if not os.path.exists(GetAppDir()):
     # db isn't initalized, initialize it
     try:
         os.mkdir(GetAppDir())
-    except Exception, e:
-        raise
-    else:
-        logg("Initializing empty blockchain database at " + GetAppDir() + "/blockchain.db")
-        blockchain_conn = sqlite3.connect(GetAppDir() + "/blockchain.db")
+        logging.info("Initializing empty blockchain database at {}/blockchain.db".format(GetAppDir()))
+        blockchain_conn = sqlite3.connect("{}/blockchain.db".format(GetAppDir()))
         blockchain_cursor = blockchain_conn.cursor()
         blockchain_cursor.execute("CREATE TABLE blocks (height INTEGER, hash, raw, nonce)")
         blockchain_cursor.execute("CREATE TABLE transactions (block, version, prev, time, value, hash, input_script, output_script, signature)")
         blockchain_conn.commit()
 
-        logg("Initializing empty wallet database at " + GetAppDir() + "/wallet.db")
-        wallet_conn = sqlite3.connect(GetAppDir() + "/wallet.db")
+        logging.info("Initializing empty wallet database at {}/wallet.db".format(GetAppDir()))
+        wallet_conn = sqlite3.connect("{}/wallet.db".format(GetAppDir()))
         wallet_cursor = wallet_conn.cursor()
         wallet_cursor.execute("CREATE TABLE keys (private, pubkey)")
         wallet_cursor.execute("CREATE TABLE transactions (tx_hash)")
         wallet_conn.commit()
 
-        logg("Initializing empty peers database at " + GetAppDir() + "/peers.db")
-        peers_conn = sqlite3.connect(GetAppDir() + "/peers.db")
+        logging.info("Initializing empty peers database at {}/peers.db".format(GetAppDir()))
+        peers_conn = sqlite3.connect("{}/peers.db".format(GetAppDir()))
         peers_cursor = peers_conn.cursor()
         peers_cursor.execute("CREATE TABLE nodes (ip, port, status)")
         peers_conn.commit()
-
 
         # hardcode nodes
         peers_cursor.execute("INSERT INTO nodes VALUES (?,?,?)", ("127.0.0.1", 7777, "ok"))
@@ -81,21 +74,19 @@ if not os.path.exists(GetAppDir()):
         peers_cursor.execute("INSERT INTO nodes VALUES (?,?,?)", ("127.0.0.4", 7777, "ok"))
         peers_conn.commit()
 
-
-
-
         # add genesis to database 
         blockchain_cursor.execute("INSERT INTO blocks VALUES (?,?,?,?)", (1, "000009cb25c348b85b01819c52402adea224580263fbe9b915be8502c5220f82", "0100000000000000000000000000000000000000000000000000000000000000000000007a98ffba469fe652771c5bb7b236248b4d78e4127ef369f1b07e1071da069e2fba756b5affff0f1ef7830e00", 0)) # Insert a row of data
         blockchain_conn.commit() 
         
-        mempool_conn = sqlite3.connect(GetAppDir() + "/mempool.db")
+        mempool_conn = sqlite3.connect("{}/mempool.db".format(GetAppDir()))
         mempool_cursor = mempool_conn.cursor()
         mempool_cursor.execute("CREATE TABLE transactions (version, prev, time, value, hash, input_script, output_script, signature)")
         mempool_conn.commit()
+    except Exception, e:
+        raise
 
     
 def internetConnection(host="8.8.8.8", port=53, timeout=3):
-    
     try:
         socket.setdefaulttimeout(timeout)
         socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((host, port))
@@ -104,12 +95,10 @@ def internetConnection(host="8.8.8.8", port=53, timeout=3):
         return False
 
 
-
 def haveReachableNode():
-
     have = 0 
     
-    peers_conn = sqlite3.connect(GetAppDir() + "/peers.db")
+    peers_conn = sqlite3.connect("{}/peers.db".format(GetAppDir()))
     peers_cursor = peers_conn.cursor()
     peers = peers_cursor.execute("SELECT * FROM nodes").fetchall()
 
@@ -122,20 +111,16 @@ def haveReachableNode():
 
         try:
             s.connect(peerip, port)
+            have += 1
         except:
             s.close()
-        else:
-            have +=1
+
     if have > 0:
         return True
     return False
 
 
-
-
-
 class CKey(object):
-
     # CKey class use https://github.com/vbuterin/pybitcointools
     # from bitcoin import *
 
@@ -148,35 +133,28 @@ class CKey(object):
         return privtopub(priv)
 
 
-
     def GetAddress(self, pub):
         return pubtoaddr(pub)
 
 
-
-
 class Sig(object):
-
     def SSign(self, tx, priv):
         sig = ecdsa_sign(str(tx),priv)
         return sig
 
 
     def VVerify(self, tx, signature):
-        return ecdsa_verify(str(tx),signature,tx["output_script"].encode("hex_codec")[2:132])
+        return ecdsa_verify(str(tx), signature,tx["output_script"].encode("hex_codec")[2:132])
         
 
     def VVVerify(self, msg, sig, pub):
         return ecdsa_verify(msg, sig, pub)
 
 
-
 class CBlockchain(object):
-
-
     def GetTransactions(self):
         # get all blockchain transactions
-        conn = sqlite3.connect(GetAppDir() +  "/blockchain.db")
+        conn = sqlite3.connect("{}/blockchain.db".format(GetAppDir()))
         conn.text_factory = str
         cur = conn.cursor() 
         cur.execute("SELECT * FROM transactions")
@@ -184,7 +162,6 @@ class CBlockchain(object):
 
 
     def isVaildTx(self, tx):
-        
         amount = tx["value"]
         inHash = tx["prev_out"]
         itime = tx["time"]
@@ -193,36 +170,24 @@ class CBlockchain(object):
         # remove signature from tx 
         del tx['signature']
 
-
-
-        conn = sqlite3.connect(GetAppDir() +  "/blockchain.db")
+        conn = sqlite3.connect("{}/blockchain.db".format(GetAppDir()))
         conn.text_factory = str
         cur = conn.cursor() 
         res = cur.execute("SELECT value FROM transactions where hash = ?", (inHash,)).fetchone()[0]
         ous = cur.execute("SELECT output_script FROM transactions where hash = ?", (inHash,)).fetchone()[0].encode("hex_codec")[2:132]
 
 
-        if not res:
-            return False
-
-        if res < amount:
-            return False
-
-        if itime > int(time.time()):
+        if not res or res < amount or itime > int(time.time()):
             return False
 
         return ecdsa_verify(str(tx),signature,ous)
 
 
-
 class CWalletDB(object):
-
-
     def __init__(self):
-        self.conn = sqlite3.connect(GetAppDir() + "/wallet.db")
+        self.conn = sqlite3.connect("{}/wallet.db".format(GetAppDir()))
         self.conn.text_factory = str
         self.cur = self.conn.cursor() 
-
 
 
     def WriteKey(self, key, pubkey):
@@ -240,13 +205,11 @@ class CWalletDB(object):
         return pubkey in str(results)
 
 
-
     def GetMyAddresses(self):
         self.cur.execute("SELECT private from keys")
         results = self.cur.fetchall()
 
-        addresses = []
-        
+        addresses = []  
         for priv in results:
             addresses.append(CKey().GetAddress(str(priv)))
 
@@ -254,7 +217,6 @@ class CWalletDB(object):
 
 
     def GetBalance(self):
-
         balance = 0 
 
         # calculate balance  
@@ -273,22 +235,22 @@ class CWalletDB(object):
 
 
     def FindHash(self, amount):
-
         ntxs = []
 
         for transaction in CBlockchain().GetTransactions():
             pubkey = transaction[7].encode("hex_codec")[2:132]
             if self.IsMineKey(pubkey):
                 thisHash = transaction[5]
+                
                 if transaction[4] >= amount:
                     for ttx in CBlockchain().GetTransactions():
-                        if type(ttx[2] == int):
+                        if isinstance(ttx[2], int):
                             return thisHash
 
 
     def FindAddrFromHash(self, txhash):
         # get all blockchain transactions
-        conn = sqlite3.connect(GetAppDir() +  "/blockchain.db")
+        conn = sqlite3.connect("{}/blockchain.db".format(GetAppDir()))
         conn.text_factory = str
         cur = conn.cursor() 
         res = cur.execute("SELECT output_script FROM transactions where hash = ?", (txhash,)).fetchone()[0]
@@ -297,20 +259,17 @@ class CWalletDB(object):
         return thisPriv
 
 
-
-
     def GenerateTransaction(self, amount, recipten):
         mybalance = self.GetBalance()
 
-
         if mybalance < amount:
             # not enought balance to create this transaction
-            logg("GenerateTransaction() Failed not enought balance to create this transaction")
+            logging.info("GenerateTransaction() Failed not enought balance to create this transaction")
             return False
 
         if len(recipten) != 130:
             # not vaild recipten key
-            logg("GenerateTransaction() Failed not vaild recipten key")
+            logging.info("GenerateTransaction() Failed not vaild recipten key")
             return False
             
         # collect hash
@@ -326,26 +285,18 @@ class CWalletDB(object):
         txNew.input_script("SilmeTransaction")
         txNew.output_script(recipten)
         txNew.add("signature", Sig().SSign(str(txNew), priv))
+        
         if Mempool().addtx(txNew):
             return True
         return False
 
 
-
-
-
-
-
 class Mempool(object):
-
-
     def __init__(self):
         # initilize empty mempool
-        self.mem_conn = sqlite3.connect(GetAppDir() + "/mempool.db")
+        self.mem_conn = sqlite3.connect("{}/mempool.db".format(GetAppDir()))
         self.mem_conn.text_factory = str
         self.mem_cur = self.mem_conn.cursor()
-        
-
 
 
     def HaveHash(self, tx):
@@ -356,16 +307,22 @@ class Mempool(object):
         return thisHash in mempool_txs
 
 
-
     def addtx(self, tx):
         # add tx to mem pool
-        
         if not self.HaveHash(tx):
-            self.mem_cur.execute("INSERT INTO transactions VALUES (?,?,?,?,?,?,?, ?)", (tx["version"], tx["prev_out"], tx["time"], tx["value"], hashlib.sha256(hashlib.sha256(str(tx)).hexdigest()).hexdigest(), tx["input_script"], tx["output_script"], tx["signature"])) # Insert a row of data
+            self.mem_cur.execute("INSERT INTO transactions VALUES (?,?,?,?,?,?,?, ?)",
+                                 (tx["version"],
+                                  tx["prev_out"],
+                                  tx["time"],
+                                  tx["value"],
+                                  hashlib.sha256(hashlib.sha256(str(tx)).hexdigest()).hexdigest(),
+                                  tx["input_script"],
+                                  tx["output_script"],
+                                  tx["signature"])) # Insert a row of data
             self.mem_conn.commit()
-            logg("Mempool() : Transaction %s added to mempool" %(hashlib.sha256(hashlib.sha256(str(tx)).hexdigest()).hexdigest(),))
+            logging("Mempool() : Transaction %s added to mempool" %(hashlib.sha256(hashlib.sha256(str(tx)).hexdigest()).hexdigest(),))
             return True
-        logg("Mempool() : Transaction %s already to mempool" %(hashlib.sha256(hashlib.sha256(str(tx)).hexdigest()).hexdigest(),))
+        logging.info("Mempool() : Transaction %s already to mempool" %(hashlib.sha256(hashlib.sha256(str(tx)).hexdigest()).hexdigest(),))
         return False, "Already have"
         
 
@@ -375,12 +332,10 @@ class Mempool(object):
         return len(mempool_txs)
 
 
-
     def GetTransactions(self):
         # get all mempool transactions
         self.mem_cur.execute("SELECT * FROM transactions")
         return self.mem_cur.fetchall()
-
 
 
     def GetSize(self):
@@ -390,31 +345,22 @@ class Mempool(object):
             ff += sys.getsizeof(tx)
         return fsize
 
+
     def gettx(self, n):
         return self.mem_cur.execute("SELECT * FROM transactions").fetchall()[n]
 
 
     def RemoveTx(self, tx):
-
-        query = 'delete from transactions where hash=?'
-        self.mem_cur.execute(query, (tx.strip(),))
+        self.mem_cur.execute('DELETE FROM transactions WHERE hash=?', (tx.strip(),))
         self.mem_conn.commit()
 
 
-
-
-    
-
 def decode_uint32(self):
-        return struct.unpack("<I", self)[0]
+    return struct.unpack("<I", self)[0]
 
 
 def format_hash(hash_):
     return str(hexlify(hash_[::-1]).decode("utf-8"))
-
-
-
-
 
 
 class CBlockIndex(object):
@@ -425,20 +371,17 @@ class CBlockIndex(object):
         self.cur = self.conn.cursor() 
         self.block = obj
         
-        if type(self.block) == int:
+        if isinstance(self.block, int):
             self.hash = self.cur.execute("SELECT hash FROM blocks WHERE height = ?", (self.block,)).fetchone()[0]
             self.raw = self.cur.execute("SELECT raw FROM blocks WHERE height = ?", (self.block,)).fetchone()[0]
             self.ntxs = self.cur.execute("SELECT COUNT(*) FROM transactions where block = ?", (self.block,)).fetchone()[0]
             self.transactions = self.cur.execute("SELECT * FROM transactions where block = ?", (self.block,)).fetchall()
-
         else:
             self.height = self.cur.execute("SELECT height FROM blocks WHERE hash = ?", (self.block,)).fetchone()[0]
             self.raw = self.cur.execute("SELECT raw FROM blocks WHERE hash = ?", (self.block,)).fetchone()[0]
             self.ntxs = self.cur.execute("SELECT COUNT(*) FROM transactions where block = ?", (self.height,)).fetchone()[0]
             self.transactions = self.cur.execute("SELECT * FROM transactions where block = ?", (self.height,)).fetchall()
 
-    
-    
 
     def Height(self):
         # get height 
@@ -480,7 +423,6 @@ class CBlockIndex(object):
         return decode_uint32(a2b_hex(self.raw[152:160]))
 
 
-        
 class CTxIndex(object):
     # ThisTx
     def __init__(self, obj):
@@ -525,22 +467,23 @@ class CTxIndex(object):
         return result[0]
 
 
-
-
-
 class CTransaction(dict):
-
     def __init__(self):
         self = dict()
         self.clear()
 
+
     def input_script(self, message):
         psz_prefix = ""
         #use OP_PUSHDATA1 if required
-        if len(message) > 76: psz_prefix = '4c'
-        script_prefix = '04ffff001d0104' + psz_prefix + chr(len(message)).encode('hex')
+        if len(message) > 76:
+            psz_prefix = '4c'
+        
+        script_prefix = '04ffff001d0104{}{}'.format(psz_prefix, hr(len(message)).encode('hex'))
+
         input_script_f  = (script_prefix + message.encode('hex')).decode('hex')
         self.add("input_script", input_script_f)
+
 
     def output_script(self, pubkey):
         script_len = '41'
@@ -553,12 +496,9 @@ class CTransaction(dict):
         self[key] = value
 
 
-
-
     def clear(self):
         # clear the dict 
         self.clear()
-
 
 
     def getHash(self):
@@ -566,15 +506,9 @@ class CTransaction(dict):
         return hashlib.sha256(hashlib.sha256(str(self)).digest()).digest()
 
 
-
-
-
-
 class CBlockchainDB(object):
-
-
     def __init__(self):
-        self.conn = sqlite3.connect((GetAppDir() + "/blockchain.db"))
+        self.conn = sqlite3.connect(("{}/blockchain.db"))
         self.conn.text_factory = str
         self.cur = self.conn.cursor() 
 
@@ -585,13 +519,10 @@ class CBlockchainDB(object):
         return len(results)
 
 
-
-
     def GetBestHash(self):
         self.cur.execute('SELECT hash FROM blocks')
         results = self.cur.fetchall()
         return results[len(results) -1][0]
-
 
 
     def haveHash(self, hash):
@@ -615,34 +546,25 @@ class CBlockchainDB(object):
                 cursor.execute("INSERT INTO transactions VALUES (?,?,?,?,?,?,?,?,?)", (height, pblock.vtx[x]["version"],pblock.vtx[x]["prev_out"],pblock.vtx[x]["time"], pblock.vtx[x]["value"], txhash, pblock.vtx[x]["input_script"], pblock.vtx[x]["output_script"], pblock.vtx[x]["signature"])) # Insert a row of data
                 conn.commit()
         except Exception, e:
-            logg(e)
+            logging.info(e)
             return False 
 
 
     def insertBlock(self, pblock, block, nonce):
-
         b_height = self.getBestHeight() + 1 
-
         b_hash = hashlib.sha256(hashlib.sha256(block).digest()).digest()[::-1].encode('hex_codec')
 
-           
         try:
             self.cur.execute("INSERT INTO blocks VALUES (?,?,?,?)", (b_height, b_hash, block, nonce))
             self.conn.commit()
             self.insertTxs(b_height, pblock)
-        except Exception, e:
-            logg(e)
-            return False 
-        else:
             return True
-
-
-
-
+        except Exception, e:
+            logging.info(e)
+            return False 
 
 
 class CBlock(object):
-
     # block header
     nVersion = None       # version 
     hashPrevBlock = None  # previous block hash 
@@ -657,7 +579,6 @@ class CBlock(object):
 
     def CBlock(self):
         SetNull()
-
 
 
     def SetNull(self):
@@ -675,12 +596,8 @@ class CBlock(object):
         return self.nBits == 0
 
 
-
-
     def Nullvtx(self):
         del self.vtx[:]
-
-
 
 
     def hash2(self, a, b):
@@ -690,8 +607,6 @@ class CBlock(object):
         b1 = b.decode('hex')[::-1]
         h = hashlib.sha256(hashlib.sha256(a1+b1).digest()).digest()
         return h[::-1].encode('hex')
-
-
 
 
     def BuildMerkleTree(self):
@@ -709,16 +624,14 @@ class CBlock(object):
             return BuildMerkleTree(newtxHashes)
 
 
-
     def pprint(self):
-        print("CBlock(hash=%s, ver=%d, hashPrevBlock=%s, hashMerkleRoot=%s)\n") %("missinghash", self.hashPrevBlock,self.nVersion, self.hashMerkleRoot)
-
-
-
+        print("CBlock(hash=%s, ver=%d, hashPrevBlock=%s, hashMerkleRoot=%s)\n") %("missinghash",
+                                                                                  self.hashPrevBlock,
+                                                                                  self.nVersion,
+                                                                                  self.hashMerkleRoot)
 
 
 class tmp():
-    
     nVersion = None 
     hashPrevBlock = None
     hashMerkleRoot = None 
@@ -748,45 +661,36 @@ class tmp():
         return block_header.build(Cblock)
 
 
-
-
-
-
 class Proccess(object):
-
-
     def thisBlock(self, block, pblock, nonce):
-        logg("Proccessing new block\n")
+        logging.info("Proccessing new block")
         # calculate hash 
         block_hash = hashlib.sha256(hashlib.sha256(block).digest()).digest()[::-1].encode('hex_codec')
 
-
-
-        
         # Check for duplicate
         if CBlockchainDB().haveHash(block_hash):
-            logg("ProcessBlock() : already have block %s %s" %(CBlockIndex(block_hash).Height(), block_hash,))
+            logging.info("ProcessBlock() : already have block %s %s" %(CBlockIndex(block_hash).Height(), block_hash,))
             return False 
         
         # Check prev block
         if CBlockchainDB().GetBestHash() != block[8:72]:
-            logg("CheckBlock() : prev block not found")
+            logging.info("CheckBlock() : prev block not found")
             return False
 
         # Check timestamp against prev
         if CBlockIndex(CBlockchainDB().GetBestHash()).Time() >= decode_uint32(a2b_hex(block[136:144])):
-            logg("CheckBlock() : block's timestamp is too early")
+            logging.info("CheckBlock() : block's timestamp is too early")
             return False
 
 
         # Check Proof Of Work
         if decode_uint32(a2b_hex(block[144:152])) != GetNextWorkRequired():
-            logg("CheckBlock() : incorrect proof of work")
+            logging.info("CheckBlock() : incorrect proof of work")
             return False
 
         # Check size 
         if sys.getsizeof(pblock.vtx) > nMaxSize:
-            logg("CheckBlock() : Block size failed")
+            logging.info("CheckBlock() : Block size failed")
             return False
 
 
@@ -796,35 +700,29 @@ class Proccess(object):
 
 
     def CheckBlock(self, block, pblock, nonce):
-
         # be sure that first tx is coinbase
         if not pblock.vtx[0]["prev_out"] == 0:
-            logg("CheckBlock() : first tx is not coinbase")
+            logging.info("CheckBlock() : first tx is not coinbase")
             return False
 
         # be sure that only 1 coinbase tx included 
         for x in xrange(1,len(pblock.vtx)):
             if pblock.vtx[x]["prev_out"] == 0:
-                logg("CheckBlock() : more than one coinbase")
+                logging.info("CheckBlock() : more than one coinbase")
                 return False
         
         # check transactions, not include coinbase tx 
         for x in xrange(1,len(pblock.vtx)):
             if not self.thisTxIsVaild(pblock.vtx[x]):
-                logg("CheckBlock() : Invaild tx found")
+                logging.info("CheckBlock() : Invaild tx found")
                 return False
-        
 
         # verify input sig
         for x in xrange(1,len(pblock.vtx)):
             if not CBlockchain().isVaildTx(pblock.vtx[x]):
-                logg("CheckBlock() : Failed to verify input sig")
+                logging.info("CheckBlock() : Failed to verify input sig")
                 return False
-
         return True
-
-
-
 
     def thisTxIsPayingMe(self, tx):
         # get this tx out pubkey 
@@ -832,13 +730,8 @@ class Proccess(object):
         return CWalletDB().IsMineKey(tx_pubkey)
 
 
-
-
-
     def thisTxIsVaild(self, tx):
-
         # check transaction verification
-
         # store signature in memory
         signature = tx["signature"]
         # remove signature from tx 
@@ -849,49 +742,39 @@ class Proccess(object):
             tx['signature'] = signature
         except Exception, e:
             tx['signature'] = signature
-            logg("Transaction %s verification error" %hashlib.sha256(hashlib.sha256(str(tx)).digest()).digest().encode("hex_codec"))
-            logg(e)
+            logging.info("Transaction %s verification error" %hashlib.sha256(hashlib.sha256(str(tx)).digest()).digest().encode("hex_codec"))
+            logging.info(e)
             return False
-
-
         
         # check for empty scripts 
         if len(tx["input_script"]) < 10 or len(tx["output_script"]) < 10:
-            logg("Proccess::thisTxIsVaild() : vin or vout empty")
+            logging.info("Proccess::thisTxIsVaild() : vin or vout empty")
             return False
         
         # check for negative tx value
         if tx["value"] == 0:
-            logg("Proccess::thisTxIsVaild() : txout.nValue negative")
+            logging.info("Proccess::thisTxIsVaild() : txout.nValue negative")
             return False
         
         # check for missing prevout 
         if tx["prev_out"] == 0:
-            logg("Proccess::thisTxIsVaild() : prevout is null")
+            logging.info("Proccess::thisTxIsVaild() : prevout is null")
             return False
-
-
-
 
         return True
     
     
 
 class thisBlock(object):
-
     # Proccess new block received by peer, and add it to database if is vaild
     # Return True if vaild False if Not
     # Only proccess blocks with coinbase transaction, wil be fixed later
-    
-
-
     def __init__(self, peer, raw, coinbase, transactions, nonce):
         self.ThisPeer = peer
         self.thisRaw = raw
         self.thisCoinbase = coinbase
         self.thisTransactions = transactions
         self.thisNonce = nonce
-
 
 
     def isVaild(self):
@@ -905,11 +788,9 @@ class thisBlock(object):
         return False 
 
 
-
     def Build(self):
         pblock = CBlock()
         pblock.Nullvtx()
-        
 
         txNew = CTransaction()
         txNew.add("version", self.thisCoinbase[1])
@@ -920,10 +801,8 @@ class thisBlock(object):
         txNew.add("output_script", self.thisCoinbase[7])
         txNew.add("signature", self.thisCoinbase[8])
         
-
         pblock.vtx.append(txNew)
 
-        
         pblock.nTime = decode_uint32(a2b_hex(self.thisRaw[136:144]))
         pblock.nBits = decode_uint32(a2b_hex(self.thisRaw[144:152]))
 
@@ -940,18 +819,14 @@ class thisBlock(object):
         return blk, pblock
 
 
-
-
 def GetBlockValue(height, fees):
     subsidy = nCoin * COIN
     subsidy >>= (height / nSubsibyHalvingInterval)
     return subsidy + fees
 
 
-
 def GetBalance(pub):
     # get balance of specifiec key
-
     # balance
     balance = 0 
 
@@ -972,17 +847,11 @@ def GetBalance(pub):
     return balance 
 
 
-
 ######## Keys 
-
-
 def AddKey(pkey):
     key = CKey()
     pubkey = key.GetPubKey(pkey)
     return CWalletDB().WriteKey(pkey, pubkey)
-
-
-
 
 
 def GenerateNewKey():
@@ -994,10 +863,7 @@ def GenerateNewKey():
     return key.GetPubKey(pkey)
 
 
-   
-   
 def GetNextWorkRequired():
-
     # latest block hash 
     pindexLast = CBlockchainDB().GetBestHash()
     
@@ -1007,18 +873,15 @@ def GetNextWorkRequired():
     nTargetSpacing = 100
     # That give us a interval 6 blocks
     nInterval = nTargetTimespan / nTargetSpacing
-    
-    
+
     # if the last block height == 1 return the minimun diif
     if CBlockIndex(pindexLast).Height() == 1:
         return 0x1e0fffff
-
 
     # Only change once per interval
     if ((CBlockIndex(pindexLast).Height()+1) % nInterval != 0):
         # Return the last block bits (difficulty)
         return CBlockIndex(pindexLast).Bits()
-
 
     # Go back by what we want to be 10 minuntes worth of blocks
     # nActualTimespan is the avg time of the last 6 blocks, example if each of the last 6 blocks took 30 seconds nActualTimespan will be 180
@@ -1026,10 +889,11 @@ def GetNextWorkRequired():
     # so if the nActualTimespan is bigger the nTargetTimespan means that blocks are mined slowly, difficulty will be reduced,
     # if the nActualTimespan is lower than nTargetTimespan means that blocks are mined quick, difficulty will be increased
 
-    logg("nActualTimespan = %d  before bounds\n" %nActualTimespan)
+    logging.info("nActualTimespan = %d  before bounds\n" %nActualTimespan)
 
     if nActualTimespan < nTargetTimespan/4:
         nActualTimespan = nTargetTimespan/4
+
     if nActualTimespan > nTargetTimespan*4:
         nActualTimespan = nTargetTimespan*4
 
@@ -1040,17 +904,13 @@ def GetNextWorkRequired():
     if bnNew > bnProofOfWorkLimit:
         bnNew = bnProofOfWorkLimit
 
-    
-
-    logg("\n\n\nGetNextWorkRequired RETARGET *****\n")
-    logg("nTargetTimespan = %d    nActualTimespan = %d\n" %(nTargetTimespan, nActualTimespan,))
-    logg("Last %d blocks time average was %d\n" %(nInterval, nActualTimespan,))
-    logg("Before: %08x  %s\n" %(CBlockIndex(pindexLast).Bits(), nActualTimespan,))
-    logg("After:  %08x  %s\n" %(GetCompact(int(bnNew)), nActualTimespan,))
+    logging.info("\n\n\nGetNextWorkRequired RETARGET *****\n")
+    logging.info("nTargetTimespan = %d    nActualTimespan = %d\n" %(nTargetTimespan, nActualTimespan,))
+    logging.info("Last %d blocks time average was %d\n" %(nInterval, nActualTimespan,))
+    logging.info("Before: %08x  %s\n" %(CBlockIndex(pindexLast).Bits(), nActualTimespan,))
+    logging.info("After:  %08x  %s\n" %(GetCompact(int(bnNew)), nActualTimespan,))
 
     return target2bits(bnNew)
-
-
 
 
 def target2bits(target):
@@ -1086,7 +946,6 @@ def num2mpi(n):
         return struct.pack(">I", datasize) + r
 
 
-
 def GetCompact(n):
         """convert number to bc compact uint"""
         mpi = num2mpi(n)
@@ -1102,12 +961,6 @@ def GetCompact(n):
         return nCompact
 
 
-
-
-
-
-
-   
 def bits2target(bits):
     """ Convert bits to target """
     exponent = ((bits >> 24) & 0xff)
@@ -1116,8 +969,6 @@ def bits2target(bits):
         mantissa *= -1 
     return (mantissa * (256**(exponent-3)))
 
-
-   
 
 def CalculateDiff():
     """ Calculate current difficulty """
@@ -1132,14 +983,10 @@ def NetworkHashrate():
     difficulty = CalculateDiff()
     return difficulty * 2**32 / 100 / 1000000000
 
-   
 
 def HashesTowin():
     """ Calculate required hashes to find a block """
     return CalculateDiff() * 2**256 / (0xffff * 2**208)
-
-
-
 
 
 def generate_hashes_from_block(data_block):
@@ -1147,10 +994,8 @@ def generate_hashes_from_block(data_block):
     return sha256_hash, sha256_hash
 
 
-
-
 def generate_hash(data_block, targetx):
-    nonce           = 0
+    nonce = 0
     target = targetx
     last_updated = time.time()
 
@@ -1159,6 +1004,6 @@ def generate_hash(data_block, targetx):
         if int(header_hash.encode('hex_codec'), 16) < target:
             return (sha256_hash, nonce, data_block)
         else:
-            nonce      +=1
+            nonce +=1
             data_block = data_block[0:len(data_block) - 4] + struct.pack('<I', nonce)  
 
