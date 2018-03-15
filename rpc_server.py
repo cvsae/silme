@@ -55,10 +55,6 @@ class AltXMLRPCServer(SimpleXMLRPCServer):
             server.handle_request()
 
 
-    
-
-
-
 if __name__ == '__main__':
 
     config = ConfigParser.ConfigParser()
@@ -76,7 +72,7 @@ if __name__ == '__main__':
             run_rpc_command(args.command, rpc_port)
             sys.exit(0)
         except socket.error:
-            print "server not running"
+            print("Server not running")
             sys.exit(1)
 
     try:
