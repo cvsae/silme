@@ -7,6 +7,7 @@ from __future__ import print_function
 
 import argparse
 import json
+from os.path import expanduser
 import signal
 import socket
 import xmlrpclib
