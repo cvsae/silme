@@ -479,7 +479,7 @@ class CTransaction(dict):
         if len(message) > 76:
             psz_prefix = '4c'
         
-        script_prefix = '04ffff001d0104{}{}'.format(psz_prefix, hr(len(message)).encode('hex'))
+        script_prefix = '04ffff001d0104{}{}'.format(psz_prefix, chr(len(message)).encode('hex'))
 
         input_script_f  = (script_prefix + message.encode('hex')).decode('hex')
         self.add("input_script", input_script_f)
