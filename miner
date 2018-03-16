@@ -9,7 +9,7 @@ import optparse
 def Miner(debug, blocks):
 
 
-    logg("SilmeMiner Started\n")
+    logging.info("SilmeMiner Started\n")
 
 
     while True:
@@ -116,16 +116,16 @@ def Miner(debug, blocks):
         if debug:
             print("\n\nRunning SilmeMiner with %d transactions in block\n" %(len(pblock.vtx)))
 
-        logg("Running SilmeMiner with %d transactions in block" %len(pblock.vtx))
+        logging.info("Running SilmeMiner with %d transactions in block" %len(pblock.vtx))
 
 
         hash, nonce, data_block = generate_hash(blk, target)
 
 
 
-        logg("SilmeMiner:\n")
+        logging.info("SilmeMiner:\n")
                 
-        logg("proof-of-work found  \nhash: %s  \ntarget: %s\n" %(hash.encode('hex_codec'), target))
+        logging.info("proof-of-work found  \nhash: %s  \ntarget: %s\n" %(hash.encode('hex_codec'), target))
 
         # save key 
         if not AddKey(privatekey):
@@ -134,13 +134,13 @@ def Miner(debug, blocks):
 
         # Process this block the same as if we had received it from another node
         if Proccess().thisBlock(data_block, pblock, nonce):
-            logg("Block accepted\n")
+            logging.info("Block accepted\n")
             if CBlockchainDB().insertBlock(pblock, data_block, nonce):
-                logg("Block successfull added to database")
+                logging.info("Block successfull added to database")
                 for txhash in included_hashes:
                     Mempool().RemoveTx(txhash)
         else:
-            logg("Block failed")
+            logging.info("Block failed")
 
 
 if __name__ == '__main__':
