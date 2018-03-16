@@ -57,7 +57,7 @@ if not os.path.exists(GetAppDir()):
         blockchain_conn = sqlite3.connect(GetAppDir() + "/blockchain.db")
         blockchain_cursor = blockchain_conn.cursor()
         blockchain_cursor.execute("CREATE TABLE blocks (height INTEGER, hash, raw, nonce)")
-        blockchain_cursor.execute("CREATE TABLE transactions (block, version, prev, time, value, hash, input_script, output_script, signature)")
+        blockchain_cursor.execute("CREATE TABLE transactions (block, version, prev, time, value, hash, input_script, output_script)")
         blockchain_conn.commit()
 
         logg("Initializing empty wallet database at " + GetAppDir() + "/wallet.db")
@@ -612,7 +612,7 @@ class CBlockchainDB(object):
             for x in xrange(0,ntx):
                 cursor = conn.cursor()
                 txhash = hashlib.sha256(hashlib.sha256(str(pblock.vtx[x])).hexdigest()).hexdigest()
-                cursor.execute("INSERT INTO transactions VALUES (?,?,?,?,?,?,?,?,?)", (height, pblock.vtx[x]["version"],pblock.vtx[x]["prev_out"],pblock.vtx[x]["time"], pblock.vtx[x]["value"], txhash, pblock.vtx[x]["input_script"], pblock.vtx[x]["output_script"], pblock.vtx[x]["signature"])) # Insert a row of data
+                cursor.execute("INSERT INTO transactions VALUES (?,?,?,?,?,?,?,?)", (height, pblock.vtx[x]["version"],pblock.vtx[x]["prev_out"],pblock.vtx[x]["time"], pblock.vtx[x]["value"], txhash, pblock.vtx[x]["input_script"], pblock.vtx[x]["output_script"])) # Insert a row of data
                 conn.commit()
         except Exception, e:
             logg(e)
