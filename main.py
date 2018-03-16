@@ -173,44 +173,44 @@ class Sig(object):
 
 class CBlockchain(object):
 
+    def __init__(self):
+        self.conn = sqlite3.connect(GetAppDir() +  "/blockchain.db")
+        self.conn.text_factory = str
+        self.cur = self.conn.cursor() 
+
+
 
     def GetTransactions(self):
         # get all blockchain transactions
-        conn = sqlite3.connect(GetAppDir() +  "/blockchain.db")
-        conn.text_factory = str
-        cur = conn.cursor() 
-        cur.execute("SELECT * FROM transactions")
-        return cur.fetchall()
+        return self.cur.execute("SELECT * FROM transactions").fetchall()
 
 
     def isVaildTx(self, tx):
+
         
+        # transaction value 
         amount = tx["value"]
+        # transaction input hash
         inHash = tx["prev_out"]
+        # transaction time
         itime = tx["time"]
         # store signature in memory
         signature = tx["signature"]
         # remove signature from tx 
         del tx['signature']
 
+        
+        # transaction input hash value
+        res = self.cur.execute("SELECT value FROM transactions where hash = ?", (inHash,)).fetchone()[0]
+        # transaction input hash pubkey
+        ous = self.cur.execute("SELECT output_script FROM transactions where hash = ?", (inHash,)).fetchone()[0].encode("hex_codec")[2:132]
 
 
-        conn = sqlite3.connect(GetAppDir() +  "/blockchain.db")
-        conn.text_factory = str
-        cur = conn.cursor() 
-        res = cur.execute("SELECT value FROM transactions where hash = ?", (inHash,)).fetchone()[0]
-        ous = cur.execute("SELECT output_script FROM transactions where hash = ?", (inHash,)).fetchone()[0].encode("hex_codec")[2:132]
-
-
-        if not res:
+        # if the input hash value < transaction value or transaction time < the current time transaction return is not vaild
+        if not res or res < amount or itime > int(time.time()):
             return False
 
-        if res < amount:
-            return False
-
-        if itime > int(time.time()):
-            return False
-
+        # transaction verification, True if verify False if not
         return ecdsa_verify(str(tx),signature,ous)
 
 
@@ -358,7 +358,7 @@ class Mempool(object):
 
 
     def addtx(self, tx):
-        # add tx to mem pool
+        # add tx to mempool
         
         if not self.HaveHash(tx):
             self.mem_cur.execute("INSERT INTO transactions VALUES (?,?,?,?,?,?,?, ?)", (tx["version"], tx["prev_out"], tx["time"], tx["value"], hashlib.sha256(hashlib.sha256(str(tx)).hexdigest()).hexdigest(), tx["input_script"], tx["output_script"], tx["signature"])) # Insert a row of data
@@ -370,32 +370,34 @@ class Mempool(object):
         
 
     def CountTxs(self):
-        # get transaction lenght
+        # Return Mempool transaction lenght
         mempool_txs = self.mem_cur.execute("SELECT * FROM transactions").fetchall()
         return len(mempool_txs)
 
 
 
     def GetTransactions(self):
-        # get all mempool transactions
+        # Return all mempool transactions
         self.mem_cur.execute("SELECT * FROM transactions")
         return self.mem_cur.fetchall()
 
 
 
     def GetSize(self):
+        # return mempool size in bytes 
         fsize = 0 
         mempool_txs = self.mem_cur.execute("SELECT * FROM transactions").fetchall()
         for tx in mempool_txs:
-            ff += sys.getsizeof(tx)
+            fsize += sys.getsizeof(tx)
         return fsize
 
     def gettx(self, n):
+
         return self.mem_cur.execute("SELECT * FROM transactions").fetchall()[n]
 
 
     def RemoveTx(self, tx):
-
+        # remove specic transaction from mempool
         query = 'delete from transactions where hash=?'
         self.mem_cur.execute(query, (tx.strip(),))
         self.mem_conn.commit()
@@ -603,33 +605,32 @@ class CBlockchainDB(object):
 
 
     def insertTxs(self, height, pblock):
-        conn = sqlite3.connect((GetAppDir() + "/blockchain.db"))
-        conn.text_factory = str
+        
         ntx = len(pblock.vtx)
         height = self.getBestHeight()
 
         try:
             for x in xrange(0,ntx):
-                cursor = conn.cursor()
                 txhash = hashlib.sha256(hashlib.sha256(str(pblock.vtx[x])).hexdigest()).hexdigest()
-                cursor.execute("INSERT INTO transactions VALUES (?,?,?,?,?,?,?,?,?)", (height, pblock.vtx[x]["version"],pblock.vtx[x]["prev_out"],pblock.vtx[x]["time"], pblock.vtx[x]["value"], txhash, pblock.vtx[x]["input_script"], pblock.vtx[x]["output_script"], pblock.vtx[x]["signature"])) # Insert a row of data
-                conn.commit()
+                self.cur.execute("INSERT INTO transactions VALUES (?,?,?,?,?,?,?,?,?)", (height, pblock.vtx[x]["version"],pblock.vtx[x]["prev_out"],pblock.vtx[x]["time"], pblock.vtx[x]["value"], txhash, pblock.vtx[x]["input_script"], pblock.vtx[x]["output_script"], pblock.vtx[x]["signature"])) # Insert a row of data
+                self.conn.commit()
         except Exception, e:
             logg(e)
             return False 
 
 
     def insertBlock(self, pblock, block, nonce):
+        
 
-        b_height = self.getBestHeight() + 1 
+        blockHeight = self.getBestHeight() + 1 
 
-        b_hash = hashlib.sha256(hashlib.sha256(block).digest()).digest()[::-1].encode('hex_codec')
+        blockHash = hashlib.sha256(hashlib.sha256(block).digest()).digest()[::-1].encode('hex_codec')
 
            
         try:
-            self.cur.execute("INSERT INTO blocks VALUES (?,?,?,?)", (b_height, b_hash, block, nonce))
+            self.cur.execute("INSERT INTO blocks VALUES (?,?,?,?)", (blockHeight, blockHash, block, nonce))
             self.conn.commit()
-            self.insertTxs(b_height, pblock)
+            self.insertTxs(blockHeight, pblock)
         except Exception, e:
             logg(e)
             return False 
