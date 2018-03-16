@@ -74,8 +74,10 @@ def Miner(debug, blocks):
                 txNew.add("signature", tx[7])
 
                 pblock.vtx.append(txNew)
+
+
         
-        # a list with sellected txs hashes from mempoolk
+        # a list with sellected txs hashes from mempool
         included_hashes = []
 
         for x in xrange(1, len(pblock.vtx)):
@@ -85,7 +87,7 @@ def Miner(debug, blocks):
   
 
         # coinbase fees 
-        got_a_fee = 90
+        got_a_fee = 0
         # block nbits 
         pblock.nBits = nBits
         # blockk timestamp
@@ -93,7 +95,7 @@ def Miner(debug, blocks):
         # collect fees + block reward into coinbade tx 
         pblock.vtx[0]["value"] = GetBlockValue(inWork, got_a_fee)
         # sign the transaction 
-        pblock.vtx[0]["signature"] = Sig().SSign(str(pblock.vtx[0]), privatekey)
+        pblock.vtx[0]["signature"] = ecdsa_sign(str(pblock.vtx[0]),privatekey)
         
         
 
@@ -133,6 +135,7 @@ def Miner(debug, blocks):
 
 
         # Process this block the same as if we had received it from another node
+
         if Proccess().thisBlock(data_block, pblock, nonce):
             logg("Block accepted\n")
             if CBlockchainDB().insertBlock(pblock, data_block, nonce):

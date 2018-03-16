@@ -155,22 +155,6 @@ class CKey(object):
 
 
 
-class Sig(object):
-
-    def SSign(self, tx, priv):
-        sig = ecdsa_sign(str(tx),priv)
-        return sig
-
-
-    def VVerify(self, tx, signature):
-        return ecdsa_verify(str(tx),signature,tx["output_script"].encode("hex_codec")[2:132])
-        
-
-    def VVVerify(self, msg, sig, pub):
-        return ecdsa_verify(msg, sig, pub)
-
-
-
 class CBlockchain(object):
 
     def __init__(self):
@@ -186,6 +170,7 @@ class CBlockchain(object):
 
 
     def isVaildTx(self, tx):
+
 
         
         # transaction value 
@@ -203,7 +188,7 @@ class CBlockchain(object):
         # transaction input hash value
         res = self.cur.execute("SELECT value FROM transactions where hash = ?", (inHash,)).fetchone()[0]
         # transaction input hash pubkey
-        ous = self.cur.execute("SELECT output_script FROM transactions where hash = ?", (inHash,)).fetchone()[0].encode("hex_codec")[2:132]
+        pub = self.cur.execute("SELECT output_script FROM transactions where hash = ?", (inHash,)).fetchone()[0].encode("hex_codec")[2:132]
 
 
         # if the input hash value < transaction value or transaction time < the current time transaction return is not vaild
@@ -211,7 +196,12 @@ class CBlockchain(object):
             return False
 
         # transaction verification, True if verify False if not
-        return ecdsa_verify(str(tx),signature,ous)
+        if ecdsa_verify(str(tx),signature,pub):
+           # add signature to tx 
+           tx['signature'] = signature
+           return True
+        return False
+
 
 
 
@@ -325,12 +315,11 @@ class CWalletDB(object):
         txNew.add("value", amount)
         txNew.input_script("SilmeTransaction")
         txNew.output_script(recipten)
-        txNew.add("signature", Sig().SSign(str(txNew), priv))
+        txNew.add("signature", ecdsa_sign(str(txNew),priv))
+
         if Mempool().addtx(txNew):
             return True
         return False
-
-
 
 
 
@@ -607,6 +596,7 @@ class CBlockchainDB(object):
     def insertTxs(self, height, pblock):
         
         ntx = len(pblock.vtx)
+
         height = self.getBestHeight()
 
         try:
@@ -620,8 +610,8 @@ class CBlockchainDB(object):
 
 
     def insertBlock(self, pblock, block, nonce):
-        
 
+        
         blockHeight = self.getBestHeight() + 1 
 
         blockHash = hashlib.sha256(hashlib.sha256(block).digest()).digest()[::-1].encode('hex_codec')
@@ -837,16 +827,22 @@ class Proccess(object):
 
 
     def thisTxIsVaild(self, tx):
-
+        
+        
         # check transaction verification
+        conn = sqlite3.connect(GetAppDir() + "/blockchain.db")
+        conn.text_factory = str
+        cur = conn.cursor()
 
         # store signature in memory
         signature = tx["signature"]
-        # remove signature from tx 
-        del tx['signature']
-        # do verify 
+        # remove signature from tx
+        del tx["signature"]
+
+        pub = cur.execute("SELECT output_script FROM transactions where hash = ?", (tx["prev_out"],)).fetchone()[0].encode("hex_codec")[2:132]
+
         try:
-            Sig().VVerify(tx,signature)
+            ecdsa_verify(str(tx),signature,pub)
             tx['signature'] = signature
         except Exception, e:
             tx['signature'] = signature
