@@ -9,7 +9,7 @@ import select
 from datetime import datetime
 from time import time
 from functools import partial
-
+import version
 
 from twisted.internet.endpoints import TCP4ServerEndpoint, TCP4ClientEndpoint
 from twisted.internet.error import CannotListenError
@@ -33,10 +33,11 @@ class NCProtocol(Protocol):
     def __init__(self, factory, state="GETHELLO", kind="LISTENER"):
         self.factory = factory
         self.state = state
-        self.VERSION = 0
+        self.VERSION = 1
         self.remote_nodeid = None
         self.kind = kind
         self.nodeid = self.factory.nodeid
+        self.protoversion = version._protocol_version
         self.lc_ping = LoopingCall(self.send_PING)
         self.message = partial(messages.envelope_decorator, self.nodeid)
 
@@ -127,22 +128,6 @@ class NCProtocol(Protocol):
 
 
 
-    def handle_ReceivedBlock(self, data):
-        logg("Received new block from %s " %self.remote_ip)
-        for line in data.splitlines():
-            line = line.strip()
-            envelope = messages.read_envelope(line)
-
-        thisRaw = envelope["data"]["raw"]
-        thisCoinbase = envelope["data"]["coinbase"]
-        thisTransactions = envelope["data"]["transactions"]
-        thisNonce = envelope["data"]["b_nonce"]
-
-
-        if thisBlock(self.remote_ip, thisRaw, thisCoinbase, thisTransactions, thisNonce).isVaild():
-            logg("Received block from %s is vaild" %self.remote_ip)
-        else:
-            logg("Received block from %s rejected" %self.remote_ip)
 
 
 
@@ -156,8 +141,9 @@ class NCProtocol(Protocol):
 
 
 
+
     def handle_ReceivedBlock(self, data):
-        print "Received new block from %s " %self.remote_nodeid
+        logg("Received new block from %s " %self.remote_nodeid)
         for line in data.splitlines():
             line = line.strip()
             envelope = messages.read_envelope(line)
@@ -166,7 +152,11 @@ class NCProtocol(Protocol):
         thisCoinbase = envelope["data"]["coinbase"]
         thisTransactions = envelope["data"]["transactions"]
         thisNonce = envelope["data"]["b_nonce"]
-        print thisBlock(self.remote_ip, thisRaw, thisCoinbase, thisTransactions, thisNonce).isVaild()
+        
+        if thisBlock(self.remote_ip, thisRaw, thisCoinbase, thisTransactions, thisNonce).isVaild():
+            logg("Received block from %s is vaild" %self.remote_ip)
+        else:
+            logg("Received block from %s rejected" %self.remote_ip)
 
 
 
@@ -283,14 +273,16 @@ class NCProtocol(Protocol):
         try:
             hello = messages.read_message(hello)
             self.remote_nodeid = hello['nodeid']
+            protoversion = hello["protocol"]
+
             if self.remote_nodeid == self.nodeid:
                 _print(" [!] Found myself at", self.host_ip)
                 self.transport.loseConnection()
             else:
                 if self.state == "GETHELLO":
-                    my_hello = messages.create_hello(self.nodeid, self.VERSION)
+                    my_hello = messages.create_hello(self.nodeid, self.VERSION, self.protoversion)
                     self.transport.write(my_hello + "\n")
-                self.add_peer()
+                self.add_peer(protoversion)
                 self.state = "READY"
                 self.print_peers()
                 self.askSync()
@@ -310,9 +302,11 @@ class NCProtocol(Protocol):
         self.write(msg)
 
 
-    def add_peer(self):
-        entry = (self.remote_ip, self.kind, time())
+    def add_peer(self, protoversion):
+        entry = (self.remote_ip, self.kind, time(), protoversion)
         self.factory.peers[self.remote_nodeid] = entry
+
+
 
 # Splitinto NCRecvFactory and NCSendFactory (also reconsider the names...:/)
 class NCFactory(Factory):

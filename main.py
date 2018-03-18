@@ -10,6 +10,7 @@ from termcolor import colored
 from sys import platform
 from construct import *
 from pybitcointools import *
+import messages
 import logging
 import sqlite3
 import socket
@@ -816,7 +817,7 @@ class Proccess(object):
             if not CBlockchain().isVaildTx(pblock.vtx[x]):
                 logg("Proccess().CheckBlock : Failed to verify input sig")
                 return False
-
+   
         return True
 
 
@@ -1163,4 +1164,3 @@ def generate_hash(data_block, targetx):
         else:
             nonce      +=1
             data_block = data_block[0:len(data_block) - 4] + struct.pack('<I', nonce)  
-

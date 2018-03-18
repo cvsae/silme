@@ -75,8 +75,8 @@ def getblock(nodeid, raw, coinbase, transactions, nonce):
 
 
 
-def create_hello(nodeid, version):
-    msg = {'version': version}
+def create_hello(nodeid, version, protoversion):
+    msg = {'version': version, 'protocol': protoversion}
     return make_envelope("hello", msg, nodeid)
 
 def create_ping(nodeid):
