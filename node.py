@@ -136,7 +136,7 @@ class NCProtocol(Protocol):
         # ask if we need sync
         if envelope["data"]["need"]:
             msg = messages.create_getblocks(self.nodeid, CBlockchainDB().getBestHeight())
-            logg("We need sync, we are %d block back")
+            logg("We need sync, we are %d block back" %envelope["data"]["blocks"])
             self.write(msg)
 
 
