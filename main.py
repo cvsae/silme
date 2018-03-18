@@ -755,34 +755,34 @@ class Proccess(object):
         
         # Check for duplicate
         if CBlockchainDB().haveHash(block_hash):
-            logg("ProcessBlock() : already have block %s %s" %(CBlockIndex(block_hash).Height(), block_hash,))
+            logg("Proccess().thisBlock : already have block %s %s" %(CBlockIndex(block_hash).Height(), block_hash,))
             return False 
         
         # Check prev block
         if CBlockchainDB().GetBestHash() != block[8:72]:
-            logg("CheckBlock() : prev block not found")
+            logg("Proccess().thisBlock : prev block not found")
             return False
 
         # Check timestamp against prev
         if CBlockIndex(CBlockchainDB().GetBestHash()).Time() >= decode_uint32(a2b_hex(block[136:144])):
-            logg("CheckBlock() : block's timestamp is too early")
+            logg("Proccess().thisBlock : block's timestamp is too early")
             return False
 
 
         # Check Proof Of Work
         if decode_uint32(a2b_hex(block[144:152])) != GetNextWorkRequired():
-            logg("CheckBlock() : incorrect proof of work")
+            logg("Proccess().thisBlock : incorrect proof of work")
             return False
 
 
         # check merkle root 
         if pblock.hashMerkleRoot != pblock.BuildMerkleTree():
-            logg("Merkle root mismatch")
+            logg("Proccess().thisBlock : Merkle root mismatch")
             return False 
 
         # Check size 
         if sys.getsizeof(pblock.vtx) > nMaxSize:
-            logg("CheckBlock() : Block size failed")
+            logg("Proccess().thisBlock : Block size failed")
             return False
 
 
@@ -795,26 +795,26 @@ class Proccess(object):
 
         # be sure that first tx is coinbase
         if not pblock.vtx[0]["prev_out"] == 0:
-            logg("CheckBlock() : first tx is not coinbase")
+            logg("Proccess().CheckBlock : first tx is not coinbase")
             return False
 
         # be sure that only 1 coinbase tx included 
         for x in xrange(1,len(pblock.vtx)):
             if pblock.vtx[x]["prev_out"] == 0:
-                logg("CheckBlock() : more than one coinbase")
+                logg("Proccess().CheckBlock : more than one coinbase")
                 return False
         
         # check transactions, not include coinbase tx 
         for x in xrange(1,len(pblock.vtx)):
             if not self.thisTxIsVaild(pblock.vtx[x]):
-                logg("CheckBlock() : Invaild tx found")
+                logg("Proccess().CheckBlock : Invaild tx found")
                 return False
         
 
         # verify input sig
         for x in xrange(1,len(pblock.vtx)):
             if not CBlockchain().isVaildTx(pblock.vtx[x]):
-                logg("CheckBlock() : Failed to verify input sig")
+                logg("Proccess().CheckBlock : Failed to verify input sig")
                 return False
 
         return True
