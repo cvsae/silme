@@ -96,14 +96,14 @@ def Miner(debug, blocks):
         pblock.vtx[0]["value"] = GetBlockValue(inWork, got_a_fee)
         # sign the transaction 
         pblock.vtx[0]["signature"] = ecdsa_sign(str(pblock.vtx[0]),privatekey)
+
+        pblock.hashMerkleRoot = pblock.BuildMerkleTree()
         
         
-
-
-
 
         tmp_block = tmp()
 
+   
         tmp_block.nVersion = 1 
         tmp_block.hashPrevBlock = pindexPrev
         tmp_block.hashMerkleRoot = pblock.BuildMerkleTree()

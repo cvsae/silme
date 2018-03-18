@@ -688,16 +688,15 @@ class CBlock(object):
     def BuildMerkleTree(self):
         del self.vMerkleTree[:]
 
+
         if len(self.vtx) == 1:
-            merkle = hashlib.sha256(hashlib.sha256(str(self.vtx[0])).digest()).digest()[::-1]
-            return merkle
-            newtxHashes = []
-            # Process pairs. For odd length, the last is skipped
-            for i in range(0, len(txHashes)-1, 2):
-                newtxHashes.append(self.hash2(self.vtx[i], txHashes[i+1]))
-            if len(txHashes) % 2 == 1:
-                newtxHashes.append(self.hash2(self.vtx[-1], txHashes[-1]))
-            return BuildMerkleTree(newtxHashes)
+            return hashlib.sha256(hashlib.sha256(str(self.vtx[0])).hexdigest()).hexdigest()
+
+        for tx in self.vtx:
+            self.vMerkleTree.append(hashlib.sha256(hashlib.sha256(str(tx)).hexdigest()).hexdigest())
+
+
+        return hashlib.sha256(hashlib.sha256(str(self.vMerkleTree)).hexdigest()).hexdigest()
 
 
 
@@ -774,6 +773,12 @@ class Proccess(object):
         if decode_uint32(a2b_hex(block[144:152])) != GetNextWorkRequired():
             logg("CheckBlock() : incorrect proof of work")
             return False
+
+
+        # check merkle root 
+        if pblock.hashMerkleRoot != pblock.BuildMerkleTree():
+            logg("Merkle root mismatch")
+            return False 
 
         # Check size 
         if sys.getsizeof(pblock.vtx) > nMaxSize:
