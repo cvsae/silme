@@ -263,7 +263,7 @@ class NCProtocol(Protocol):
 
 
     def send_HELLO(self):
-        hello = messages.create_hello(self.nodeid, self.VERSION)
+        hello = messages.create_hello(self.nodeid, self.VERSION, self.protoversion)
         self.transport.write(hello + "\n")
         self.state = "SENTHELLO"
 
