@@ -914,17 +914,28 @@ class thisBlock(object):
         pblock.Nullvtx()
         
 
-        txNew = CTransaction()
-        txNew.add("version", self.thisCoinbase[1])
-        txNew.add("prev_out", self.thisCoinbase[2])
-        txNew.add("time", self.thisCoinbase[3])
-        txNew.add("value", self.thisCoinbase[4])
-        txNew.add("input_script", self.thisCoinbase[6])
-        txNew.add("output_script", self.thisCoinbase[7])
-        txNew.add("signature", self.thisCoinbase[8])
+        txCoinbase = CTransaction()
+        txCoinbase.add("version", self.thisCoinbase[1])
+        txCoinbase.add("prev_out", self.thisCoinbase[2])
+        txCoinbase.add("time", self.thisCoinbase[3])
+        txCoinbase.add("value", self.thisCoinbase[4])
+        txCoinbase.add("input_script", self.thisCoinbase[6])
+        txCoinbase.add("output_script", self.thisCoinbase[7])
+        txCoinbase.add("signature", self.thisCoinbase[8])
         
-
-        pblock.vtx.append(txNew)
+        # add coinbase as first tx in block 
+        pblock.vtx.append(txCoinbase)
+        
+        for x in xrange(1, len(self.thisTransactions)):
+            txNew = CTransaction()
+            txNew.add("version", self.thisTransactions[x][1])
+            txNew.add("prev_out", self.thisTransactions[x][2])
+            txNew.add("time", self.thisTransactions[x][3])
+            txNew.add("value", self.thisTransactions[x][4])
+            txNew.add("input_script", self.thisTransactions[x][6])
+            txNew.add("output_script", self.thisTransactions[x][7])
+            txNew.add("signature", self.thisTransactions[x][8])
+            pblock.vtx.append(txNew)
 
         
         pblock.nTime = decode_uint32(a2b_hex(self.thisRaw[136:144]))
