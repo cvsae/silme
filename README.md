@@ -12,17 +12,17 @@ You can contribute to silme, simple open a pull request
 
 # INSTAL SILME
 ``` bash
-git clone https://github.com/cvsae/silme
+git clone https://github.com/Aareon/silme
 cd silme
-sudo pip install -r silme_req.txt
-./configure
+sudo pip install -r requirements.txt
+sh ./configure.sh
 
 ```
 
 # RUN SILME 
 ``` bash
 cd silme
-./silme-qt
+py ./wallet.py
 ```
 
 # USAGE
@@ -31,9 +31,9 @@ cd silme
 
 Silme supports rpc commands
 ``` bash
-./silmed start - Start rpc server
-./silmed stop - Stop rpc server
-./silmed help - Get a list of the available commands
+sh ./silmed.sh start - Start rpc server
+sh ./silmed.sh stop - Stop rpc server
+sh ./silmed.sh help - Get a list of the available commands
 ```
 
 ## MINING
