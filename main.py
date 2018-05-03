@@ -3,23 +3,25 @@
 # Distributed under the MIT/X11 software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-from binascii import hexlify, unhexlify
-from binascii import b2a_hex, a2b_hex
-from os.path import expanduser
-from termcolor import colored
-from sys import platform
-from construct import *
-from pybitcointools import *
 import logging
-import sqlite3
+import os
 import socket
+import sqlite3
 import string
 import struct
+import sys
+from binascii import a2b_hex, b2a_hex, hexlify, unhexlify
+from os.path import expanduser
+from sys import platform
+
+from construct import *
+from cryptos import *
+from termcolor import colored
 
 # python 3.x compatibility
 try:
     xrange
-except NameError:
+except:
     xrange = range
 
 # One silme can be split into 100000000 satoshi
@@ -38,8 +40,6 @@ logging.basicConfig(level=logging.INFO, filename="debug.log", format='%(asctime)
 
 def GetAppDir():
     # currently suppports linux 
-    if not platform in ["linux", "linux2"]:
-        sys.exit(logging.info("Error: Unsupported platform"))
     return "{}/.silme".format(expanduser("~"))
 
 
@@ -82,7 +82,7 @@ if not os.path.exists(GetAppDir()):
         mempool_cursor = mempool_conn.cursor()
         mempool_cursor.execute("CREATE TABLE transactions (version, prev, time, value, hash, input_script, output_script, signature)")
         mempool_conn.commit()
-    except Exception, e:
+    except Exception as e:
         raise
 
     
@@ -195,7 +195,7 @@ class CWalletDB(object):
             self.cur.execute("INSERT INTO keys VALUES (?,?)", (key, pubkey))
             self.conn.commit()
             return True
-        except Exception, e:
+        except Exception as e:
             return False 
 
 
@@ -545,7 +545,7 @@ class CBlockchainDB(object):
                 txhash = hashlib.sha256(hashlib.sha256(str(pblock.vtx[x])).hexdigest()).hexdigest()
                 cursor.execute("INSERT INTO transactions VALUES (?,?,?,?,?,?,?,?,?)", (height, pblock.vtx[x]["version"],pblock.vtx[x]["prev_out"],pblock.vtx[x]["time"], pblock.vtx[x]["value"], txhash, pblock.vtx[x]["input_script"], pblock.vtx[x]["output_script"], pblock.vtx[x]["signature"])) # Insert a row of data
                 conn.commit()
-        except Exception, e:
+        except Exception as e:
             logging.info(e)
             return False 
 
@@ -559,7 +559,7 @@ class CBlockchainDB(object):
             self.conn.commit()
             self.insertTxs(b_height, pblock)
             return True
-        except Exception, e:
+        except Exception as e:
             logging.info(e)
             return False 
 
@@ -740,7 +740,7 @@ class Proccess(object):
         try:
             Sig().VVerify(tx,signature)
             tx['signature'] = signature
-        except Exception, e:
+        except Exception as e:
             tx['signature'] = signature
             logging.info("Transaction %s verification error" %hashlib.sha256(hashlib.sha256(str(tx)).digest()).digest().encode("hex_codec"))
             logging.info(e)
@@ -1006,4 +1006,3 @@ def generate_hash(data_block, targetx):
         else:
             nonce +=1
             data_block = data_block[0:len(data_block) - 4] + struct.pack('<I', nonce)  
-
