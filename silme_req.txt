@@ -1,4 +1,5 @@
-pybitcointools 
+git+git://github.com/primal100/pybitcointools
 bitcoin
 termcolor
 construct==2.5.2
+pbkdf2==1.3
